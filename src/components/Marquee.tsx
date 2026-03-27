@@ -15,7 +15,7 @@ const words = [
 
 export default function Marquee() {
   return (
-    <div className="relative py-10 bg-cream overflow-hidden border-y border-brown-deep/5">
+    <div className="relative py-10 bg-background overflow-hidden border-y border-border/30">
       <motion.div
         animate={{ x: [0, -1920] }}
         transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
@@ -23,10 +23,10 @@ export default function Marquee() {
       >
         {[...words, ...words, ...words, ...words].map((word, i) => (
           <span key={i} className="flex items-center gap-8">
-            <span className="font-[family-name:var(--font-cormorant)] text-3xl md:text-4xl font-light italic text-brown-deep/15">
+            <span className="font-[family-name:var(--font-cormorant)] text-3xl md:text-4xl font-light italic text-foreground/15">
               {word}
             </span>
-            <span className="w-2 h-2 rounded-full bg-warm/20" />
+            <span className="w-2 h-2 rounded-full bg-primary/20" />
           </span>
         ))}
       </motion.div>

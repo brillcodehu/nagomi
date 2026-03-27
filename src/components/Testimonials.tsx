@@ -7,7 +7,7 @@ const testimonials = [
   {
     name: "Horvath Anna",
     role: "3 honapja jar",
-    text: "A Nagomi teljesen megvaltoztatta az eletetemet. A hatfajasaim megszuntek es sokkal energikusabbnak erzem magam. Az oktatók hihetetlenul figyelmesek!",
+    text: "A Nagomi teljesen megvaltoztatta az eletem. A hatfajasaim megszuntek es sokkal energikusabbnak erzem magam. Az oktatok hihetetlenul figyelmesek!",
     rating: 5,
   },
   {
@@ -19,7 +19,7 @@ const testimonials = [
   {
     name: "Szabo Dora",
     role: "6 honapja jar",
-    text: "Premium elment, tokeletes hangulat, profeszionalis oktatasan. A Nagomi a hetem fenypontja. Mindenkinek ajanlom, aki keresik a minoseget.",
+    text: "Premium elmeny, tokeletes hangulat, professzionalis oktatas. A Nagomi a hetem fenypontja. Mindenkinek ajanlom, aki keresi a minoseget.",
     rating: 5,
   },
   {
@@ -39,21 +39,19 @@ export default function Testimonials() {
     <section
       ref={sectionRef}
       id="velemenyek"
-      className="relative py-32 md:py-44 bg-sand/50 overflow-hidden"
+      className="relative py-32 md:py-44 bg-muted/30 overflow-hidden"
     >
-      {/* Decorative */}
-      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-brown/8 to-transparent" />
-      <motion.div className="absolute top-[30%] right-[5%] w-[400px] h-[400px] rounded-full bg-warm/5 blur-3xl" />
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+      <div className="absolute top-[30%] right-[5%] w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
         <div className="grid md:grid-cols-2 gap-16 md:gap-24">
-          {/* Left - heading */}
           <div>
             <motion.span
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
-              className="inline-block text-sm tracking-[0.3em] uppercase text-warm-dark/70 mb-6"
+              className="inline-block text-sm tracking-[0.3em] uppercase text-primary/70 mb-6"
             >
               Velemenyek
             </motion.span>
@@ -62,24 +60,22 @@ export default function Testimonials() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="font-[family-name:var(--font-cormorant)] text-4xl md:text-5xl lg:text-7xl font-light leading-[1.1] text-brown-deep mb-8"
+              className="font-[family-name:var(--font-cormorant)] text-4xl md:text-5xl lg:text-7xl font-light leading-[1.1] text-foreground mb-8"
             >
-              Amit <span className="italic text-warm-dark">vendgeink</span>
+              Amit <span className="italic text-primary">vendegeink</span>
               <br />
               mondanak
             </motion.h2>
 
-            {/* Large quote mark */}
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               animate={isInView ? { opacity: 0.08, scale: 1 } : {}}
               transition={{ duration: 1, delay: 0.3 }}
-              className="font-[family-name:var(--font-cormorant)] text-[200px] leading-none text-brown-deep select-none"
+              className="font-[family-name:var(--font-cormorant)] text-[200px] leading-none text-foreground select-none"
             >
               &ldquo;
             </motion.div>
 
-            {/* Dots navigation */}
             <div className="flex items-center gap-3 mt-8">
               {testimonials.map((_, i) => (
                 <button
@@ -87,8 +83,8 @@ export default function Testimonials() {
                   onClick={() => setActive(i)}
                   className={`transition-all duration-300 rounded-full ${
                     i === active
-                      ? "w-8 h-2 bg-warm-dark"
-                      : "w-2 h-2 bg-brown-deep/20 hover:bg-brown-deep/40"
+                      ? "w-8 h-2 bg-primary"
+                      : "w-2 h-2 bg-foreground/20 hover:bg-foreground/40"
                   }`}
                   aria-label={`Velemeny ${i + 1}`}
                 />
@@ -96,7 +92,6 @@ export default function Testimonials() {
             </div>
           </div>
 
-          {/* Right - testimonial card */}
           <div className="flex items-center">
             <AnimatePresence mode="wait">
               <motion.div
@@ -105,14 +100,13 @@ export default function Testimonials() {
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 exit={{ opacity: 0, y: -30, filter: "blur(4px)" }}
                 transition={{ duration: 0.5 }}
-                className="bg-cream/80 backdrop-blur-xl rounded-3xl p-10 md:p-12 shadow-xl shadow-brown-deep/5"
+                className="bg-background/80 backdrop-blur-xl rounded-3xl p-10 md:p-12 shadow-xl shadow-foreground/5"
               >
-                {/* Stars */}
                 <div className="flex items-center gap-1 mb-8">
                   {Array.from({ length: testimonials[active].rating }).map((_, i) => (
                     <svg
                       key={i}
-                      className="w-4 h-4 text-warm"
+                      className="w-4 h-4 text-primary"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -121,23 +115,21 @@ export default function Testimonials() {
                   ))}
                 </div>
 
-                {/* Quote */}
-                <p className="font-[family-name:var(--font-cormorant)] text-2xl md:text-3xl font-light leading-relaxed text-brown-deep mb-10">
+                <p className="font-[family-name:var(--font-cormorant)] text-2xl md:text-3xl font-light leading-relaxed text-foreground mb-10">
                   &ldquo;{testimonials[active].text}&rdquo;
                 </p>
 
-                {/* Author */}
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-light/40 to-sand flex items-center justify-center">
-                    <span className="font-[family-name:var(--font-cormorant)] text-lg text-brown-deep">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-chart-3/40 to-card flex items-center justify-center">
+                    <span className="font-[family-name:var(--font-cormorant)] text-lg text-foreground">
                       {testimonials[active].name.charAt(0)}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-brown-deep">
+                    <p className="font-medium text-foreground">
                       {testimonials[active].name}
                     </p>
-                    <p className="text-sm text-brown/40">
+                    <p className="text-sm text-muted-foreground">
                       {testimonials[active].role}
                     </p>
                   </div>

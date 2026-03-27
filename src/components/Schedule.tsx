@@ -21,19 +21,17 @@ export default function Schedule() {
       id="idopontok"
       className="relative py-32 md:py-44 overflow-hidden"
     >
-      {/* Decorative */}
-      <motion.div className="absolute top-[20%] left-[5%] w-[500px] h-[500px] rounded-full bg-sage/5 blur-3xl" />
-      <motion.div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] rounded-full bg-warm/5 blur-3xl" />
+      <div className="absolute top-[20%] left-[5%] w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
+      <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16">
           <div>
             <motion.span
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
-              className="inline-block text-sm tracking-[0.3em] uppercase text-warm-dark/70 mb-6"
+              className="inline-block text-sm tracking-[0.3em] uppercase text-primary/70 mb-6"
             >
               Orarend
             </motion.span>
@@ -42,9 +40,9 @@ export default function Schedule() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="font-[family-name:var(--font-cormorant)] text-4xl md:text-5xl lg:text-7xl font-light leading-[1.1] text-brown-deep"
+              className="font-[family-name:var(--font-cormorant)] text-4xl md:text-5xl lg:text-7xl font-light leading-[1.1] text-foreground"
             >
-              Heti <span className="italic text-warm-dark">idopontok</span>
+              Heti <span className="italic text-primary">idopontok</span>
             </motion.h2>
           </div>
 
@@ -53,14 +51,13 @@ export default function Schedule() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
             href="#foglalj"
-            className="mt-6 md:mt-0 inline-flex items-center gap-2 text-sm tracking-widest uppercase text-brown-deep hover:text-warm-dark transition-colors group"
+            className="mt-6 md:mt-0 inline-flex items-center gap-2 text-sm tracking-widest uppercase text-foreground hover:text-primary transition-colors group"
           >
             Osszes idopont
             <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
           </motion.a>
         </div>
 
-        {/* Schedule grid */}
         <div className="space-y-4">
           {schedule.map((day, dayIndex) => (
             <motion.div
@@ -70,15 +67,13 @@ export default function Schedule() {
               transition={{ duration: 0.6, delay: dayIndex * 0.08 + 0.2 }}
               className="group"
             >
-              <div className="grid grid-cols-12 gap-4 items-start py-6 border-t border-brown-deep/8 group-hover:border-brown-deep/15 transition-colors">
-                {/* Day name */}
+              <div className="grid grid-cols-12 gap-4 items-start py-6 border-t border-border/30 group-hover:border-border/60 transition-colors">
                 <div className="col-span-12 md:col-span-2">
-                  <span className="font-[family-name:var(--font-cormorant)] text-2xl font-light text-brown-deep">
+                  <span className="font-[family-name:var(--font-cormorant)] text-2xl font-light text-foreground">
                     {day.day}
                   </span>
                 </div>
 
-                {/* Classes */}
                 <div className="col-span-12 md:col-span-10 grid sm:grid-cols-3 gap-3">
                   {day.classes.map((cls) => {
                     const isFull = cls.spots === 0;
@@ -87,25 +82,25 @@ export default function Schedule() {
                         key={`${day.day}-${cls.time}`}
                         className={`relative rounded-2xl p-5 transition-all duration-300 cursor-pointer ${
                           isFull
-                            ? "bg-sand/40 opacity-60"
-                            : "bg-sand/60 hover:bg-sand hover:shadow-lg hover:shadow-brown-deep/5 hover:-translate-y-0.5"
+                            ? "bg-muted/30 opacity-60"
+                            : "bg-muted/40 hover:bg-muted/60 hover:shadow-lg hover:shadow-foreground/5 hover:-translate-y-0.5"
                         }`}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <span className="text-xs tracking-widest uppercase text-brown/40">
+                          <span className="text-xs tracking-widest uppercase text-muted-foreground/50">
                             {cls.time}
                           </span>
                           {isFull ? (
-                            <span className="text-[10px] tracking-wider uppercase text-terracotta/70 bg-terracotta/10 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] tracking-wider uppercase text-destructive/70 bg-destructive/10 px-2 py-0.5 rounded-full">
                               Betelt
                             </span>
                           ) : (
-                            <span className="text-[10px] tracking-wider uppercase text-sage/80 bg-sage/10 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] tracking-wider uppercase text-chart-5/80 bg-chart-5/10 px-2 py-0.5 rounded-full">
                               {cls.spots} hely
                             </span>
                           )}
                         </div>
-                        <h4 className="font-[family-name:var(--font-cormorant)] text-xl font-medium text-brown-deep">
+                        <h4 className="font-[family-name:var(--font-cormorant)] text-xl font-medium text-foreground">
                           {cls.name}
                         </h4>
                       </div>
@@ -117,7 +112,6 @@ export default function Schedule() {
           ))}
         </div>
 
-        {/* Book CTA */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -127,15 +121,15 @@ export default function Schedule() {
         >
           <a
             href="#foglalj"
-            className="group relative inline-flex items-center gap-3 px-12 py-5 bg-brown-deep text-cream text-sm tracking-widest uppercase rounded-full overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-brown-deep/20"
+            className="group relative inline-flex items-center gap-3 px-12 py-5 bg-foreground text-background text-sm tracking-widest uppercase rounded-full overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/20"
           >
-            <span className="relative z-10">Online foglals</span>
+            <span className="relative z-10">Online foglalas</span>
             <span className="relative z-10 group-hover:translate-x-1 transition-transform duration-300">
               &rarr;
             </span>
-            <div className="absolute inset-0 bg-warm-dark translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+            <div className="absolute inset-0 bg-primary translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
           </a>
-          <p className="mt-4 text-sm text-brown/40 font-light">
+          <p className="mt-4 text-sm text-muted-foreground/50 font-light">
             Valaszd ki a szamodra megfelelo idopontot es fizess online
           </p>
         </motion.div>

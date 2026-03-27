@@ -40,43 +40,39 @@ export default function Navigation() {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
-            ? "bg-cream/80 backdrop-blur-xl shadow-[0_1px_0_0_rgba(139,111,71,0.08)]"
+            ? "bg-background/80 backdrop-blur-xl shadow-[0_1px_0_0_rgba(163,119,100,0.08)]"
             : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="flex items-center justify-between h-20">
-            {/* Logo */}
             <a href="#" className="relative z-10 group">
-              <span className="font-[family-name:var(--font-cormorant)] text-3xl font-light tracking-wider text-brown-deep group-hover:text-brown transition-colors duration-300">
+              <span className="font-[family-name:var(--font-cormorant)] text-3xl font-light tracking-wider text-foreground group-hover:text-muted-foreground transition-colors duration-300">
                 nagomi
               </span>
-              <span className="block h-[1px] w-0 group-hover:w-full bg-warm transition-all duration-500" />
+              <span className="block h-[1px] w-0 group-hover:w-full bg-primary transition-all duration-500" />
             </a>
 
-            {/* Desktop links */}
             <div className="hidden md:flex items-center gap-10">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="relative text-sm font-light tracking-widest uppercase text-brown-dark/70 hover:text-brown-deep transition-colors duration-300 group"
+                  className="relative text-sm font-light tracking-widest uppercase text-muted-foreground/70 hover:text-foreground transition-colors duration-300 group"
                 >
                   {link.label}
-                  <span className="absolute -bottom-1 left-0 h-[1px] w-0 group-hover:w-full bg-warm transition-all duration-400 ease-out" />
+                  <span className="absolute -bottom-1 left-0 h-[1px] w-0 group-hover:w-full bg-primary transition-all duration-400 ease-out" />
                 </a>
               ))}
             </div>
 
-            {/* CTA button */}
             <a
               href="#foglalj"
-              className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-brown-deep text-cream text-sm font-light tracking-widest uppercase rounded-full hover:bg-brown-dark transition-all duration-300 hover:shadow-lg hover:shadow-brown-deep/10"
+              className="hidden md:inline-flex items-center gap-2 px-7 py-3 bg-foreground text-background text-sm font-light tracking-widest uppercase rounded-full hover:bg-muted-foreground transition-all duration-300 hover:shadow-lg hover:shadow-foreground/10"
             >
               Foglalj orat
             </a>
 
-            {/* Mobile menu button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden relative z-10 w-10 h-10 flex flex-col items-center justify-center gap-1.5"
@@ -84,22 +80,21 @@ export default function Navigation() {
             >
               <motion.span
                 animate={mobileOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
-                className="block w-6 h-[1.5px] bg-brown-deep origin-center"
+                className="block w-6 h-[1.5px] bg-foreground origin-center"
               />
               <motion.span
                 animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }}
-                className="block w-6 h-[1.5px] bg-brown-deep"
+                className="block w-6 h-[1.5px] bg-foreground"
               />
               <motion.span
                 animate={mobileOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-                className="block w-6 h-[1.5px] bg-brown-deep origin-center"
+                className="block w-6 h-[1.5px] bg-foreground origin-center"
               />
             </button>
           </div>
         </div>
       </motion.nav>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -107,7 +102,7 @@ export default function Navigation() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-40 bg-cream/98 backdrop-blur-2xl flex flex-col items-center justify-center"
+            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-2xl flex flex-col items-center justify-center"
           >
             <nav className="flex flex-col items-center gap-8">
               {navLinks.map((link, i) => (
@@ -119,7 +114,7 @@ export default function Navigation() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: i * 0.08, duration: 0.5 }}
-                  className="font-[family-name:var(--font-cormorant)] text-4xl font-light text-brown-deep hover:text-warm transition-colors"
+                  className="font-[family-name:var(--font-cormorant)] text-4xl font-light text-foreground hover:text-primary transition-colors"
                 >
                   {link.label}
                 </motion.a>
@@ -131,7 +126,7 @@ export default function Navigation() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: navLinks.length * 0.08, duration: 0.5 }}
-                className="mt-4 px-10 py-4 bg-brown-deep text-cream text-sm tracking-widest uppercase rounded-full"
+                className="mt-4 px-10 py-4 bg-foreground text-background text-sm tracking-widest uppercase rounded-full"
               >
                 Foglalj orat
               </motion.a>
