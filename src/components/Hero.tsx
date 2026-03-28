@@ -83,6 +83,10 @@ export default function Hero() {
   const leaf2Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, 40] : [0, 0]);
   const leaf3Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -25] : [0, 0]);
 
+  // Pilates illustration parallax (desktop only)
+  const illustrationHazeY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -20] : [0, 0]);
+  const illustrationLineY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -35] : [0, 0]);
+
   return (
     <section
       ref={containerRef}
@@ -100,6 +104,61 @@ export default function Hero() {
           ].join(", "),
         }}
       />
+
+      {/* ═══ Pilates illustration: atmospheric haze (depth-0) ═══ */}
+      <motion.div
+        style={{ y: illustrationHazeY }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 3, delay: 0.5 }}
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <div
+          className="absolute right-[-5%] top-[-5%] w-[90%] h-[75%] lg:right-[0%] lg:top-[5%] lg:w-[65%] lg:h-[85%]"
+          style={{
+            backgroundImage: "url(/pilateshero.png)",
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center right",
+            filter: "blur(45px) brightness(1.2) saturate(0.3)",
+            mixBlendMode: "screen" as const,
+            opacity: 0.035,
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 65% 45%, black, transparent 70%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 65% 45%, black, transparent 70%)",
+          }}
+        />
+      </motion.div>
+
+      {/* ═══ Pilates illustration: line-art ghost (depth-1) ═══ */}
+      <motion.div
+        style={{ y: illustrationLineY }}
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 3, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <div
+          className="absolute right-[-10%] top-[-5%] w-[90%] h-[75%] lg:right-[-3%] lg:top-[2%] lg:w-[58%] lg:h-[88%]"
+          style={{
+            backgroundImage: "url(/pilateshero.png)",
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center right",
+            filter:
+              "invert(1) sepia(1) saturate(0.35) hue-rotate(5deg) brightness(0.85) contrast(1.5)",
+            mixBlendMode: "screen" as const,
+            opacity: 0.06,
+            maskImage:
+              "radial-gradient(ellipse 75% 65% at 60% 48%, black 15%, transparent 65%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 75% 65% at 60% 48%, black 15%, transparent 65%)",
+          }}
+        />
+      </motion.div>
 
       {/* ═══ Ghost kanji 和 (harmony = nagomi) ═══ */}
       <div
