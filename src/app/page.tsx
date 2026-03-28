@@ -6,7 +6,7 @@ import Classes from "@/components/Classes";
 import Schedule from "@/components/schedule/Schedule";
 import PricingSection from "@/components/schedule/PricingSection";
 import Testimonials from "@/components/Testimonials";
-import Contact from "@/components/Contact";
+
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 
@@ -30,9 +30,6 @@ export default function Home() {
       </ScrollReveal>
       <ScrollReveal type="clip-iris">
         <Testimonials />
-      </ScrollReveal>
-      <ScrollReveal type="curtain">
-        <Contact />
       </ScrollReveal>
       <Footer />
     </main>
