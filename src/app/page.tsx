@@ -7,6 +7,7 @@ import Schedule from "@/components/schedule/Schedule";
 import PricingSection from "@/components/schedule/PricingSection";
 import Testimonials from "@/components/Testimonials";
 
+import MapSection from "@/components/MapSection";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 
@@ -31,6 +32,7 @@ export default function Home() {
       <ScrollReveal type="clip-iris">
         <Testimonials />
       </ScrollReveal>
+      <MapSection />
       <Footer />
     </main>
   );
