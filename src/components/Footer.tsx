@@ -113,72 +113,25 @@ export default function Footer() {
       ref={footerRef}
       className="relative bg-foreground overflow-hidden"
     >
-      {/* ═══ Depth 0: Map atmospheric haze ═══ */}
+      {/* ═══ Map background: direct image, bright center fading out ═══ */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
       >
         <div
-          className="absolute inset-0"
+          className="absolute inset-[-10%]"
           style={{
             backgroundImage: "url(/footerimage.png)",
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundPosition: "center top",
             backgroundRepeat: "no-repeat",
-            filter: "blur(40px) brightness(1.3) saturate(0.2)",
-            mixBlendMode: "screen",
-            opacity: 0.04,
+            opacity: 0.45,
             maskImage:
-              "radial-gradient(ellipse 90% 80% at 50% 50%, black, transparent 75%)",
+              "radial-gradient(ellipse 55% 50% at 50% 25%, white, rgba(255,255,255,0.3) 50%, transparent 80%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse 90% 80% at 50% 50%, black, transparent 75%)",
+              "radial-gradient(ellipse 55% 50% at 50% 25%, white, rgba(255,255,255,0.3) 50%, transparent 80%)",
           }}
         />
-      </div>
-
-      {/* ═══ Depth 1: Map line-art ghost ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: "url(/footerimage.png)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            filter:
-              "invert(1) sepia(1) saturate(0.3) hue-rotate(5deg) brightness(0.8) contrast(1.4)",
-            mixBlendMode: "screen",
-            opacity: 0.06,
-            maskImage:
-              "radial-gradient(ellipse 85% 75% at 50% 50%, black 10%, transparent 70%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 85% 75% at 50% 50%, black 10%, transparent 70%)",
-          }}
-        />
-      </div>
-
-      {/* ═══ Depth 0: Atmospheric gradients ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background: [
-            "radial-gradient(ellipse 50% 40% at 30% 30%, rgba(154,131,99,0.06), transparent 70%)",
-            "radial-gradient(ellipse 45% 35% at 75% 70%, rgba(196,185,154,0.04), transparent 65%)",
-          ].join(", "),
-        }}
-      />
-
-      {/* ═══ Depth 0: Fine accent lines ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-      >
-        <div className="absolute top-[35%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.03] to-transparent" />
-        <div className="absolute top-0 left-[65%] w-px h-full bg-gradient-to-b from-transparent via-background/[0.025] to-transparent hidden lg:block" />
       </div>
 
       {/* ═══ Content ═══ */}
