@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -61,48 +61,52 @@ function SimpleLeaf({ className }: { className?: string }) {
 
 export default function Hero() {
   const containerRef = useRef<HTMLElement>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    setIsDesktop(window.innerWidth >= 1024);
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const contentY = useTransform(scrollYProgress, [0, 0.6], [0, 80]);
-  const circleY = useTransform(scrollYProgress, [0, 1], [0, -40]);
-  const circleScale = useTransform(scrollYProgress, [0, 0.7], [1, 0.85]);
+  // Parallax only on desktop
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], isDesktop ? [1, 0] : [1, 1]);
+  const contentY = useTransform(scrollYProgress, [0, 0.6], isDesktop ? [0, 80] : [0, 0]);
+  const circleY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -40] : [0, 0]);
+  const circleScale = useTransform(scrollYProgress, [0, 0.7], isDesktop ? [1, 0.85] : [1, 1]);
 
-  // Botanical parallax (different speeds for depth)
-  const leaf1Y = useTransform(scrollYProgress, [0, 1], [0, -60]);
-  const leaf2Y = useTransform(scrollYProgress, [0, 1], [0, 40]);
-  const leaf3Y = useTransform(scrollYProgress, [0, 1], [0, -25]);
+  // Botanical parallax (desktop only)
+  const leaf1Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -60] : [0, 0]);
+  const leaf2Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, 40] : [0, 0]);
+  const leaf3Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -25] : [0, 0]);
 
   return (
     <section
       ref={containerRef}
       className="relative h-[100svh] min-h-[700px] overflow-hidden bg-foreground"
     >
-      {/* ═══ Rich atmospheric background ═══ */}
+      {/* ═══ Rich atmospheric background (single paint, no blur) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
-      >
-        {/* Primary warm glow - top right */}
-        <div className="absolute -top-[20%] right-[-5%] w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-primary/[0.06] blur-[180px]" />
-        {/* Secondary warm glow - bottom left */}
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-primary/[0.04] blur-[160px]" />
-        {/* Accent glow - center */}
-        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full bg-secondary/[0.03] blur-[140px]" />
-      </div>
+        style={{
+          background: [
+            "radial-gradient(ellipse 70% 60% at 80% 15%, rgba(154,131,99,0.07), transparent 70%)",
+            "radial-gradient(ellipse 55% 50% at 10% 85%, rgba(154,131,99,0.05), transparent 70%)",
+            "radial-gradient(ellipse 40% 40% at 50% 50%, rgba(196,185,154,0.03), transparent 65%)",
+          ].join(", "),
+        }}
+      />
 
       {/* ═══ Ghost kanji 和 (harmony = nagomi) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden"
         aria-hidden="true"
       >
-        <motion.span
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 3, delay: 0.8, ease: "easeOut" }}
+        <span
           className="text-[min(70vw,700px)] font-bold leading-none select-none"
           style={{
             color: "transparent",
@@ -110,33 +114,17 @@ export default function Hero() {
           }}
         >
           和
-        </motion.span>
+        </span>
       </div>
 
-      {/* ═══ Fine horizontal accent lines ═══ */}
+      {/* ═══ Fine accent lines (CSS only, no animation on mobile) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none overflow-hidden"
         aria-hidden="true"
       >
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 2, delay: 1.2, ease: "easeOut" }}
-          className="absolute top-[25%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.04] to-transparent origin-left"
-        />
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 2.5, delay: 1.6, ease: "easeOut" }}
-          className="absolute top-[75%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.03] to-transparent origin-right"
-        />
-        {/* Vertical accent - right third */}
-        <motion.div
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 1 }}
-          transition={{ duration: 2, delay: 1.8, ease: "easeOut" }}
-          className="absolute top-0 right-[33%] w-px h-full bg-gradient-to-b from-transparent via-background/[0.03] to-transparent origin-top hidden lg:block"
-        />
+        <div className="absolute top-[25%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.04] to-transparent" />
+        <div className="absolute top-[75%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.03] to-transparent" />
+        <div className="absolute top-0 right-[33%] w-px h-full bg-gradient-to-b from-transparent via-background/[0.03] to-transparent hidden lg:block" />
       </div>
 
       {/* ═══ Botanical elements (desktop only, 3D depth) ═══ */}
@@ -244,19 +232,14 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* ═══ Mobile botanical (lightweight, single element) ═══ */}
+      {/* ═══ Mobile botanical (static, no animation) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none lg:hidden"
         aria-hidden="true"
       >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2, delay: 1.5 }}
-          className="absolute right-[-8%] top-[5%] w-[200px] h-[200px]"
-        >
+        <div className="absolute right-[-8%] top-[5%] w-[200px] h-[200px]">
           <MonsteraLeaf className="w-full h-full text-primary/[0.06] rotate-[-20deg]" />
-        </motion.div>
+        </div>
       </div>
 
       {/* ═══ Content ═══ */}
@@ -267,15 +250,15 @@ export default function Hero() {
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
             {/* Text */}
-            <div className="max-w-2xl">
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.3, ease }}
-                className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.3em] uppercase text-background/25 mb-10"
-              >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="max-w-2xl"
+            >
+              <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.3em] uppercase text-background/25 mb-10">
                 Premium Reformer Pilates &middot; Debrecen
-              </motion.p>
+              </p>
 
               <h1 className="mb-8">
                 <span className="block overflow-hidden">
@@ -300,29 +283,14 @@ export default function Hero() {
                 </span>
               </h1>
 
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 1, delay: 1.4, ease }}
-                className="w-20 h-[1.5px] bg-gradient-to-r from-primary/50 to-transparent origin-left mb-10"
-              />
+              <div className="w-20 h-[1.5px] bg-gradient-to-r from-primary/50 to-transparent mb-10" />
 
-              <motion.p
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.6, ease }}
-                className="text-[15px] md:text-[16px] text-background/30 font-light max-w-md leading-[1.85] mb-12"
-              >
+              <p className="text-[15px] md:text-[16px] text-background/30 font-light max-w-md leading-[1.85] mb-12">
                 Kis csoportos reformer pilates órák egyéni figyelemmel.
                 Ahol a tested és lelked újra harmóniába kerül.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.8, ease }}
-                className="flex flex-col sm:flex-row items-start gap-4"
-              >
+              <div className="flex flex-col sm:flex-row items-start gap-4">
                 <a
                   href="#foglalj"
                   className="group inline-flex items-center gap-3 px-8 py-4
@@ -359,8 +327,8 @@ export default function Hero() {
                 >
                   Ismerd meg a stúdiót
                 </a>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
 
             {/* Rotating circular text */}
             <motion.div
@@ -438,28 +406,25 @@ export default function Hero() {
         </div>
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.8, duration: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10"
-      >
+      {/* Scroll indicator (desktop only animation) */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10">
         <span className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.4em] uppercase text-background/12">
           Görgess
         </span>
         <div className="w-px h-10 bg-background/[0.05] relative overflow-hidden">
-          <motion.div
-            animate={{ y: ["-100%", "200%"] }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="absolute inset-x-0 h-1/3 bg-primary/25"
-          />
+          {isDesktop && (
+            <motion.div
+              animate={{ y: ["-100%", "200%"] }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="absolute inset-x-0 h-1/3 bg-primary/25"
+            />
+          )}
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
