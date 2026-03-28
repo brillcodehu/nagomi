@@ -295,19 +295,20 @@ export default function Testimonials() {
         });
       }
 
-      /* REVIEWS ghost text fill: bottom-to-top color fill on scroll */
-      if (reviewsFillRef.current) {
+      /* REVIEWS ghost text fill: pin section, fill bottom-to-top, then release */
+      if (reviewsFillRef.current && sectionRef.current) {
         gsap.fromTo(
           reviewsFillRef.current,
           { clipPath: "inset(100% 0 0 0)" },
           {
             clipPath: "inset(0% 0 0 0)",
-            ease: "none",
+            ease: "power1.inOut",
             scrollTrigger: {
-              trigger: reviewsFillRef.current,
-              start: "top 100%",
-              end: "top 50%",
-              scrub: 0.8,
+              trigger: sectionRef.current,
+              start: "bottom bottom",
+              end: "+=400",
+              pin: true,
+              scrub: 0.6,
             },
           }
         );
@@ -373,7 +374,7 @@ export default function Testimonials() {
             marginLeft: "-3%",
             marginBottom: "-2%",
             color: "var(--foreground)",
-            opacity: 0.06,
+            opacity: 0.12,
             fontWeight: 900,
             lineHeight: 0.85,
             letterSpacing: "-0.04em",

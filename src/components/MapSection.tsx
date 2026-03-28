@@ -16,6 +16,16 @@ export default function MapSection() {
         quality={90}
       />
 
+      {/* Top edge: strong foreground fade */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[20%] pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background:
+            "linear-gradient(to bottom, var(--foreground) 0%, var(--foreground) 15%, transparent 100%)",
+        }}
+      />
+
       {/* Vignette overlay: all edges tinted with foreground color, center clear */}
       <div
         className="absolute inset-0 pointer-events-none"
