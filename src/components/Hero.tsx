@@ -245,7 +245,7 @@ export default function Hero() {
       {/* ═══ Content ═══ */}
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-center lg:pb-0 pt-[100px] md:pt-[110px] lg:pt-[80px]"
+        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-center lg:pb-0 pt-[100px] md:pt-[110px] lg:pt-0"
       >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
