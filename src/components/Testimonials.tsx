@@ -145,6 +145,7 @@ export default function Testimonials() {
   const ratingNumberRef = useRef<HTMLSpanElement>(null);
   const dividerRef = useRef<HTMLDivElement>(null);
   const quoteRef = useRef<HTMLDivElement>(null);
+  const reviewsFillRef = useRef<HTMLSpanElement>(null);
 
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = next, -1 = prev
@@ -293,6 +294,24 @@ export default function Testimonials() {
           },
         });
       }
+
+      /* REVIEWS ghost text fill: bottom-to-top color fill on scroll */
+      if (reviewsFillRef.current) {
+        gsap.fromTo(
+          reviewsFillRef.current,
+          { clipPath: "inset(100% 0 0 0)" },
+          {
+            clipPath: "inset(0% 0 0 0)",
+            ease: "none",
+            scrollTrigger: {
+              trigger: reviewsFillRef.current,
+              start: "top 100%",
+              end: "top 50%",
+              scrub: 0.8,
+            },
+          }
+        );
+      }
     }, sectionRef);
 
     return () => ctx.revert();
@@ -329,17 +348,38 @@ export default function Testimonials() {
         <DiamondDecor className="absolute bottom-[10%] left-[3%] w-[180px] h-[180px] text-foreground/[0.02]" />
       </div>
 
-      {/* ═══ Depth 0: Ghost text ═══ */}
+      {/* ═══ Depth 0: Ghost text with scroll fill ═══ */}
       <div
         className="absolute inset-0 flex items-end pointer-events-none overflow-hidden"
         aria-hidden="true"
       >
+        {/* Outline layer (always visible) */}
         <span
           className="ghost-text-light font-[family-name:var(--font-playfair)]"
           style={{
             fontSize: "clamp(6rem, 16vw, 16rem)",
             marginLeft: "-3%",
             marginBottom: "-2%",
+          }}
+        >
+          REVIEWS
+        </span>
+        {/* Solid fill layer (clips from bottom-to-top on scroll) */}
+        <span
+          ref={reviewsFillRef}
+          className="absolute bottom-0 left-0 font-[family-name:var(--font-playfair)]"
+          style={{
+            fontSize: "clamp(6rem, 16vw, 16rem)",
+            marginLeft: "-3%",
+            marginBottom: "-2%",
+            color: "var(--foreground)",
+            opacity: 0.06,
+            fontWeight: 900,
+            lineHeight: 0.85,
+            letterSpacing: "-0.04em",
+            whiteSpace: "nowrap",
+            userSelect: "none",
+            clipPath: "inset(100% 0 0 0)",
           }}
         >
           REVIEWS
