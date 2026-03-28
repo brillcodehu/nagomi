@@ -374,26 +374,26 @@ export default function About() {
         aria-hidden="true"
         style={{
           background: [
-            "radial-gradient(ellipse 40% 35% at 15% 30%, rgba(154,131,99,0.03), transparent 70%)",
-            "radial-gradient(ellipse 35% 40% at 85% 65%, rgba(196,185,154,0.025), transparent 70%)",
-            "radial-gradient(ellipse 30% 25% at 55% 90%, rgba(212,201,181,0.02), transparent 65%)",
+            "radial-gradient(ellipse 40% 35% at 15% 30%, rgba(154,131,99,0.07), transparent 70%)",
+            "radial-gradient(ellipse 35% 40% at 85% 65%, rgba(196,185,154,0.06), transparent 70%)",
+            "radial-gradient(ellipse 30% 25% at 55% 90%, rgba(212,201,181,0.05), transparent 65%)",
           ].join(", "),
         }}
       />
 
       {/* ═══ Depth-0: Fine accent lines ═══ */}
       <div className="depth-layer" aria-hidden="true">
-        <div className="absolute top-[30%] left-0 w-full h-px bg-gradient-to-r from-transparent via-foreground/[0.03] to-transparent" />
-        <div className="absolute top-0 left-[22%] w-px h-full bg-gradient-to-b from-transparent via-foreground/[0.025] to-transparent hidden lg:block" />
+        <div className="absolute top-[30%] left-0 w-full h-px bg-gradient-to-r from-transparent via-foreground/[0.06] to-transparent" />
+        <div className="absolute top-0 left-[22%] w-px h-full bg-gradient-to-b from-transparent via-foreground/[0.05] to-transparent hidden lg:block" />
       </div>
 
       {/* ═══ Depth-0: Botanical elements (desktop only) ═══ */}
       <div className="depth-layer overflow-hidden hidden lg:block" aria-hidden="true">
         <div className="about-botanical absolute right-[-4%] top-[3%] w-[200px] h-[500px] xl:w-[240px] xl:h-[600px]">
-          <PampasGrass className="w-full h-full text-foreground/[0.04] rotate-[12deg]" />
+          <PampasGrass className="w-full h-full text-foreground/[0.15] rotate-[12deg]" />
         </div>
         <div className="about-botanical absolute left-[6%] bottom-[-8%] w-[140px] h-[370px] xl:w-[170px] xl:h-[450px]">
-          <EucalyptusBranch className="w-full h-full text-primary/[0.05] rotate-[-8deg]" />
+          <EucalyptusBranch className="w-full h-full text-primary/[0.12] rotate-[-8deg]" />
         </div>
       </div>
 
