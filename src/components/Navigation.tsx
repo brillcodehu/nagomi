@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   motion,
   AnimatePresence,
@@ -19,23 +19,13 @@ const navLinks = [
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function Navigation() {
-  const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const { scrollY } = useScroll();
-  const lastScrollY = useRef(0);
 
-  // Track scroll direction for hide/show
   useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = lastScrollY.current;
-    lastScrollY.current = latest;
     setScrolled(latest > 30);
-    if (latest > previous && latest > 200) {
-      setHidden(true);
-    } else {
-      setHidden(false);
-    }
   });
 
   // Track active section based on scroll position
@@ -74,10 +64,7 @@ export default function Navigation() {
       {/* ═══════ FLOATING NAV BAR ═══════ */}
       <motion.nav
         initial={{ y: -120, opacity: 0 }}
-        animate={{
-          y: hidden && !mobileOpen ? -120 : 0,
-          opacity: 1,
-        }}
+        animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease }}
         className="fixed top-0 left-0 right-0 z-50 px-3 pt-3 md:px-5 md:pt-4"
       >
