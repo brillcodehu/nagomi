@@ -1,414 +1,225 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const CIRCLE_TEXT = "NAGOMI  \u2022  REFORMER PILATES  \u2022  DEBRECEN  \u2022  ";
-const GHOST_TEXT = "NAGOMI";
 
-// Split text into character spans for animation
-function SplitChars({
-  text,
-  className = "",
-  charClassName = "",
-}: {
-  text: string;
-  className?: string;
-  charClassName?: string;
-}) {
+/* ═══════════════════════════════════════
+   Inline botanical SVGs
+   ═══════════════════════════════════════ */
+
+function MonsteraLeaf({ className }: { className?: string }) {
   return (
-    <span className={className} aria-label={text}>
-      {text.split("").map((char, i) => (
-        <span
-          key={i}
-          className={`split-char ${charClassName}`}
-          aria-hidden="true"
-          style={{ opacity: 0, transform: "translateY(110%)" }}
-        >
-          {char === " " ? "\u00A0" : char}
-        </span>
-      ))}
-    </span>
+    <svg
+      viewBox="0 0 512 512"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M332.9 17.37c-11.7-.1-24.2 1.23-37.5 4.13c-33.1 7.21-48.6 28.49-56.2 54.09c11.2 22.86 20.1 46.01 25 71.91c-9.6-6.9-19.7-1.7-22.6 5c-4.3-22.4-10-42.9-17.8-62.93c-48.8-34.88-83-20.9-89.6-18.76C49.64 98.12 25.54 165.7 39.84 239.1c19.32-43.4 86.56-68.7 113.56-68.6c6.9.1 47 9.5 13.6 20c-54.8 17.3-98.29 48.7-116.81 86c8.78 24.5 21.34 49.1 36.89 72.4c14.42-42 40.22-89 96.72-125.1c14.5-9.3 23.8.7 12.2 13.2c-53.5 57.4-75.1 104.2-81 148.6c17.4 20.3 37.2 38.9 58.5 54.7c1.6-54.4 20.3-117.7 56.3-164.6c3.7-6.6 22-2.7 15.6 9c-27.9 50.9-43.2 119.9-44.5 174c25.6 15.2 52.9 26.3 80.9 31.9c-15.1-35.2-18.5-80.5-6.9-120.8c5.1-17.8 20.8-8.1 17.6 4.2c-10 38.8 8.6 87.5 28.1 120.6c20.7.1 41.6-3.1 62.3-10.2c11.8-4 22.7-12.3 32.7-23.8c-11.3-22.8-27-44.1-46.6-57.2c-7.4-5-3.2-23.6 10.2-14.8c19.1 12.6 37.6 29.7 52.8 48.7c9.8-16.8 18.2-37 25-59.4c-29.7-34.7-83.3-82-128.8-101.7c-9.6-4.1-8.7-21.5 7.6-16.4c47.8 14.8 98 46.2 131.1 78c3.9-19.9 6.7-40.8 8.1-61.9c-39-27.6-95.5-67.2-147.1-74.8c-9.5-1.4-13.6-18.6 3-17.8c58.3 2.7 109.8 23.5 145.1 50.5c-.5-28.6-3.6-56.7-9.7-82.9c-41.7-13.6-113.5-18.5-141.5-6.1c-11.1 4.9-29.9-4.8-6.8-16.6c37.6-22.1 94.5-22.8 138.3-11c-21.3-57.97-60.7-99.32-123.4-99.83z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function LotusFlower({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 512 512"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M152.313 19.438C138.075 73.11 172.984 126.662 178.25 180.25c-28.744-16.01-71.286-25.18-88.656-43.656c9.36 29.558 51.055 44.096 77.094 66.312c-57.236 1.556-101.637 65.75-148.125 79c54.52 31.628 111.427.296 167.437 23.875c-27.654 34.76-47.284 67.888-57.97 107.283C148.787 384.2 174.07 351.39 198.72 326c-11.686 54.742 1.313 109.477 28.155 164.22c13.028-52.977 67.36-98.796 75.03-157.533c22.665 36.313 53.4 62.266 83.158 103.938c-14.644-51.287-47.12-87.914-64.22-123.625c52.358 5.59 115.075 28.68 168.5 43.47c-29.835-58.79-64.534-103.922-107.78-125.158c33.01.717 70.858 5.604 103.312 10.907c-33.377-19.14-68.513-28.226-110-33.032c49.013-47.885 68.943-95.774 68.406-143.657c-48.033 32.51-96.09 58.57-144.124 74.75c17.206-28.64 40.82-59.57 62-85.468c-35.326 20.535-61.807 48.477-88.22 85.094c-23.716-46.89-79.993-64.068-120.623-120.47zm35.625 72.937c8.325 26.55 49.006 61.23 63.718 91.625c-7.935 2.196-15.188 5.65-21.437 10.063c-9.67-33.43-46.513-71.114-42.282-101.688zm213.28 31.906c-20.144 34.656-47.403 60.806-83 86.72c-2.394-7.408-7.083-13.755-13.124-18.563c31.454-17.384 66.972-44.313 96.125-68.156zm-129.812 75.814c6.66.108 12.638 1.57 17.375 3.97c7.22 3.653 11.376 8.906 12.345 15.436s-1.55 13.663-7.53 20.188c-5.983 6.524-15.326 12.01-26.283 14.218c-10.956 2.208-21.094.686-28.312-2.97c-7.218-3.653-11.374-8.906-12.344-15.436s1.55-13.694 7.53-20.22c5.983-6.524 15.328-11.98 26.283-14.186a51.6 51.6 0 0 1 8.03-.97c.977-.04 1.955-.046 2.906-.03m-63.562 30.562a37.3 37.3 0 0 0 .344 7.563c.983 6.622 3.748 12.55 7.718 17.56c-36.236-7.654-91.958 24.29-125.062 10.157c34.23-.804 77.367-27.78 117-35.28m107.5 10.25c43.444 16.685 78.393 35.883 108.406 65.72c-39.556-17.844-87.918-37.4-126.563-45.47c3.768-2.62 7.204-5.558 10.188-8.812c3.177-3.465 5.884-7.328 7.97-11.438zM274.156 271.5l.22.03c-19.568 32.856-17.574 83.757-44.313 131.845c8.36-50.135 3.05-88.19 17.593-130.438c7.4 1.1 15.3.903 23.344-.718c1.07-.217 2.108-.46 3.156-.72z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function SimpleLeaf({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66l.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 
 export default function Hero() {
   const containerRef = useRef<HTMLElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const ghostRef = useRef<HTMLDivElement>(null);
-  const circleRef = useRef<HTMLDivElement>(null);
-  const accentRef = useRef<HTMLDivElement>(null);
-  const scrollIndicatorRef = useRef<HTMLDivElement>(null);
-  const horizCompRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
 
-  // Mouse-following glow (CSS custom properties, zero re-renders)
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      e.currentTarget.style.setProperty("--glow-x", `${x}%`);
-      e.currentTarget.style.setProperty("--glow-y", `${y}%`);
-    },
-    []
-  );
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+  const contentY = useTransform(scrollYProgress, [0, 0.6], [0, 80]);
+  const circleY = useTransform(scrollYProgress, [0, 1], [0, -40]);
+  const circleScale = useTransform(scrollYProgress, [0, 0.7], [1, 0.85]);
 
-  // GSAP ScrollTrigger - scroll-driven parallax exit + ghost text parallax
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const ctx = gsap.context(() => {
-      const section = containerRef.current;
-      if (!section) return;
-
-      // Split text character animation on load
-      const chars = section.querySelectorAll(".hero-char");
-      gsap.to(chars, {
-        opacity: 1,
-        y: 0,
-        duration: 1.1,
-        ease: "power4.out",
-        stagger: 0.03,
-        delay: 0.6,
-      });
-
-      // Ghost text parallax on scroll
-      if (ghostRef.current) {
-        gsap.to(ghostRef.current, {
-          xPercent: -15,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: "bottom top",
-            scrub: 1.5,
-          },
-        });
-      }
-
-      // Content parallax exit on scroll
-      if (contentRef.current) {
-        gsap.to(contentRef.current, {
-          y: 150,
-          opacity: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: "70% top",
-            scrub: 0.8,
-          },
-        });
-      }
-
-      // Circle element parallax (moves slower, creates depth)
-      if (circleRef.current) {
-        gsap.to(circleRef.current, {
-          y: -80,
-          scale: 0.85,
-          opacity: 0.3,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: "80% top",
-            scrub: 1,
-          },
-        });
-      }
-
-      // Accent line draw
-      if (accentRef.current) {
-        gsap.fromTo(
-          accentRef.current,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 1.2,
-            delay: 1.8,
-            ease: "power3.out",
-          }
-        );
-      }
-
-      // Horizontal composition parallax on scroll
-      if (horizCompRef.current) {
-        gsap.to(horizCompRef.current, {
-          y: 40,
-          opacity: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "20% top",
-            end: "60% top",
-            scrub: 0.8,
-          },
-        });
-      }
-
-      // Scroll indicator fade out on scroll
-      if (scrollIndicatorRef.current) {
-        gsap.to(scrollIndicatorRef.current, {
-          opacity: 0,
-          y: 20,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "10% top",
-            end: "25% top",
-            scrub: 0.5,
-          },
-        });
-      }
-
-      // Decorative frame lines parallax
-      const frameLines = section.querySelectorAll(".frame-line");
-      frameLines.forEach((line, i) => {
-        gsap.to(line, {
-          y: 40 + i * 20,
-          opacity: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: "60% top",
-            scrub: 1,
-          },
-        });
-      });
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
+  // Botanical parallax (different speeds for depth)
+  const leaf1Y = useTransform(scrollYProgress, [0, 1], [0, -60]);
+  const leaf2Y = useTransform(scrollYProgress, [0, 1], [0, 40]);
+  const leaf3Y = useTransform(scrollYProgress, [0, 1], [0, -25]);
 
   return (
     <section
       ref={containerRef}
-      onMouseMove={handleMouseMove}
       className="relative h-[100svh] min-h-[700px] overflow-hidden bg-foreground"
-      style={
-        { "--glow-x": "50%", "--glow-y": "50%" } as React.CSSProperties
-      }
     >
-      {/* ═══ DEPTH 0: Ghost outlined text (far background) ═══ */}
+      {/* Subtle ambient gradient */}
       <div
-        ref={ghostRef}
-        className="absolute inset-0 flex items-center pointer-events-none overflow-hidden"
+        className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
       >
-        <span
-          className="ghost-text font-[family-name:var(--font-playfair)]"
-          style={{
-            fontSize: "clamp(10rem, 28vw, 28rem)",
-            marginLeft: "-5%",
-          }}
+        <div className="absolute -top-[20%] right-[0%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-primary/[0.04] blur-[180px]" />
+      </div>
+
+      {/* ═══ Botanical elements (desktop only, 3D depth) ═══ */}
+      <div
+        className="absolute inset-0 pointer-events-none hidden lg:block"
+        aria-hidden="true"
+        style={{ perspective: "1200px" }}
+      >
+        {/* Large monstera - right side, behind circle */}
+        <motion.div
+          style={{ y: leaf1Y }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2, delay: 1.5, ease: "easeOut" }}
+          className="absolute right-[2%] top-[8%] w-[340px] h-[340px] xl:w-[420px] xl:h-[420px]"
         >
-          {GHOST_TEXT}
-        </span>
-      </div>
+          <motion.div
+            animate={{
+              rotateY: [0, 8, 0, -5, 0],
+              rotateX: [0, -4, 0, 3, 0],
+              rotateZ: [0, 1.5, 0, -1, 0],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            <MonsteraLeaf className="w-full h-full text-primary/[0.06] rotate-[-15deg]" />
+          </motion.div>
+        </motion.div>
 
-      {/* ═══ DEPTH 1: Ambient gradient orbs ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-      >
+        {/* Lotus - left side, lower */}
         <motion.div
-          animate={{
-            x: [0, 40, -20, 0],
-            y: [0, -50, 30, 0],
-            scale: [1, 1.1, 0.95, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute -top-[15%] right-[5%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-primary/[0.07] blur-[150px]"
-        />
-        <motion.div
-          animate={{
-            x: [0, -30, 40, 0],
-            y: [0, 40, -30, 0],
-            scale: [1, 0.95, 1.05, 1],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute -bottom-[10%] -left-[10%] w-[45vw] h-[45vw] max-w-[600px] max-h-[600px] rounded-full bg-secondary/[0.05] blur-[130px]"
-        />
-        <motion.div
-          animate={{
-            x: [0, 20, -30, 0],
-            y: [0, -20, 25, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute top-[40%] right-[30%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] rounded-full bg-accent/[0.04] blur-[100px]"
-        />
-      </div>
+          style={{ y: leaf2Y }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2, delay: 2, ease: "easeOut" }}
+          className="absolute left-[-2%] bottom-[10%] w-[200px] h-[200px] xl:w-[260px] xl:h-[260px]"
+        >
+          <motion.div
+            animate={{
+              rotateY: [0, -6, 0, 4, 0],
+              rotateX: [0, 5, 0, -3, 0],
+              rotateZ: [0, -2, 0, 1.5, 0],
+            }}
+            transition={{
+              duration: 24,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 3,
+            }}
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            <LotusFlower className="w-full h-full text-secondary/[0.05] rotate-[25deg]" />
+          </motion.div>
+        </motion.div>
 
-      {/* ═══ DEPTH 1: Dot grid ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(245,240,232,0.035) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-
-      {/* ═══ DEPTH 2: Mouse-following glow ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-70"
-        aria-hidden="true"
-        style={{
-          background:
-            "radial-gradient(900px circle at var(--glow-x) var(--glow-y), rgba(154,131,99,0.06), transparent 50%)",
-        }}
-      />
-
-      {/* ═══ DEPTH 2: Decorative frame lines ═══ */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-      >
+        {/* Small leaf accent - top left area */}
         <motion.div
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 1.8, delay: 2.2, ease }}
-          className="frame-line absolute top-[12%] left-6 lg:left-16 w-px h-[25%] bg-background/[0.05] origin-top"
-        />
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 1.5, delay: 2.4, ease }}
-          className="frame-line absolute bottom-[12%] right-6 lg:right-16 w-[12%] h-px bg-background/[0.05] origin-right"
-        />
+          style={{ y: leaf3Y }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, delay: 2.5 }}
+          className="absolute left-[15%] top-[18%] w-[60px] h-[60px] xl:w-[80px] xl:h-[80px]"
+        >
+          <motion.div
+            animate={{
+              rotate: [0, 10, 0, -8, 0],
+              y: [0, -8, 0, 6, 0],
+            }}
+            transition={{
+              duration: 14,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1,
+            }}
+          >
+            <SimpleLeaf className="w-full h-full text-primary/[0.08] rotate-[45deg]" />
+          </motion.div>
+        </motion.div>
+
+        {/* Tiny leaf accent - bottom right */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 2.7 }}
-          className="frame-line absolute top-[12%] right-6 lg:right-16"
+          transition={{ duration: 1.5, delay: 3 }}
+          className="absolute right-[20%] bottom-[22%] w-[40px] h-[40px]"
         >
-          <div className="w-[30px] h-px bg-background/[0.04]" />
-          <div className="w-px h-[30px] bg-background/[0.04] absolute top-0 right-0" />
+          <motion.div
+            animate={{
+              rotate: [0, -15, 0, 12, 0],
+              y: [0, 6, 0, -4, 0],
+            }}
+            transition={{
+              duration: 18,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 5,
+            }}
+          >
+            <SimpleLeaf className="w-full h-full text-secondary/[0.06] rotate-[-30deg] scale-x-[-1]" />
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* ═══ DEPTH 3: Floating particles ═══ */}
+      {/* ═══ Mobile botanical (lightweight, single element) ═══ */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none lg:hidden"
         aria-hidden="true"
       >
         <motion.div
-          animate={{
-            y: [0, -25, 0],
-            x: [0, 10, 0],
-            opacity: [0.15, 0.35, 0.15],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute top-[22%] right-[18%] w-[5px] h-[5px] rounded-full bg-primary/30"
-        />
-        <motion.div
-          animate={{
-            y: [0, 20, 0],
-            x: [0, -8, 0],
-            opacity: [0.1, 0.25, 0.1],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 3,
-          }}
-          className="absolute bottom-[28%] left-[12%] w-[3px] h-[3px] rounded-full bg-secondary/30"
-        />
-        <motion.div
-          animate={{
-            y: [0, -12, 0],
-            rotate: [0, 180, 360],
-            opacity: [0.06, 0.12, 0.06],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 6,
-          }}
-          className="absolute top-[55%] right-[42%] w-[22px] h-px bg-background/20"
-        />
-        <motion.div
-          animate={{
-            y: [0, 15, 0],
-            opacity: [0.08, 0.18, 0.08],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-          className="absolute top-[75%] right-[25%] w-[4px] h-[4px] rounded-full bg-primary/20"
-        />
-        <motion.div
-          animate={{
-            y: [0, -30, 0],
-            x: [0, 15, 0],
-            opacity: [0.04, 0.1, 0.04],
-          }}
-          transition={{
-            duration: 14,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 4,
-          }}
-          className="absolute top-[35%] left-[35%] w-[6px] h-[6px] rounded-full bg-primary/15"
-        />
-        <motion.div
-          animate={{
-            y: [0, 18, 0],
-            x: [0, -12, 0],
-            rotate: [0, 90, 0],
-            opacity: [0.03, 0.08, 0.03],
-          }}
-          transition={{
-            duration: 16,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 8,
-          }}
-          className="absolute bottom-[18%] right-[38%] w-[18px] h-px bg-background/15"
-        />
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 2, delay: 1.5 }}
+          className="absolute right-[-8%] top-[5%] w-[200px] h-[200px]"
+        >
+          <MonsteraLeaf className="w-full h-full text-primary/[0.04] rotate-[-20deg]" />
+        </motion.div>
       </div>
 
-      {/* ═══ DEPTH 4: Main content ═══ */}
-      <div
-        ref={contentRef}
-        className="relative z-10 flex items-center h-full pt-20 md:pt-24"
+      {/* ═══ Content ═══ */}
+      <motion.div
+        style={{ y: contentY, opacity: contentOpacity }}
+        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-center lg:pb-0 pt-[100px] md:pt-[110px] lg:pt-[80px]"
       >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
-            {/* Left: Text */}
+            {/* Text */}
             <div className="max-w-2xl">
-              {/* Kicker */}
               <motion.p
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.3, ease }}
                 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.3em] uppercase text-background/25 mb-10"
@@ -416,47 +227,50 @@ export default function Hero() {
                 Premium Reformer Pilates &middot; Debrecen
               </motion.p>
 
-              {/* Headline - Split character animation */}
               <h1 className="mb-8">
-                <span className="split-line">
-                  <SplitChars
-                    text="Találj rá"
-                    className="block font-[family-name:var(--font-playfair)] text-[clamp(3.2rem,9vw,8.5rem)] font-medium leading-[0.88] tracking-[-0.03em] text-background"
-                    charClassName="hero-char"
-                  />
+                <span className="block overflow-hidden">
+                  <motion.span
+                    initial={{ y: "110%" }}
+                    animate={{ y: "0%" }}
+                    transition={{ duration: 1.2, delay: 0.5, ease }}
+                    className="block font-[family-name:var(--font-playfair)] text-[clamp(3rem,8.5vw,8rem)] font-medium leading-[0.9] tracking-[-0.03em] text-background"
+                  >
+                    Találj rá
+                  </motion.span>
                 </span>
-                <span className="split-line mt-1">
-                  <SplitChars
-                    text="önmagadra."
-                    className="block font-[family-name:var(--font-playfair)] text-[clamp(3.2rem,9vw,8.5rem)] font-medium leading-[0.88] tracking-[-0.03em] text-background/85 italic"
-                    charClassName="hero-char"
-                  />
+                <span className="block overflow-hidden mt-1">
+                  <motion.span
+                    initial={{ y: "110%" }}
+                    animate={{ y: "0%" }}
+                    transition={{ duration: 1.2, delay: 0.7, ease }}
+                    className="block font-[family-name:var(--font-playfair)] text-[clamp(3rem,8.5vw,8rem)] font-medium leading-[0.9] tracking-[-0.03em] text-background/85 italic"
+                  >
+                    önmagadra.
+                  </motion.span>
                 </span>
               </h1>
 
-              {/* Animated accent line */}
-              <div
-                ref={accentRef}
-                className="w-24 h-[1.5px] bg-gradient-to-r from-primary/60 via-primary/30 to-transparent origin-left mb-10"
-                style={{ transform: "scaleX(0)" }}
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 1, delay: 1.4, ease }}
+                className="w-20 h-[1.5px] bg-gradient-to-r from-primary/50 to-transparent origin-left mb-10"
               />
 
-              {/* Description */}
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.8, ease }}
+                transition={{ duration: 0.8, delay: 1.6, ease }}
                 className="text-[15px] md:text-[16px] text-background/30 font-light max-w-md leading-[1.85] mb-12"
               >
                 Kis csoportos reformer pilates órák egyéni figyelemmel.
                 Ahol a tested és lelked újra harmóniába kerül.
               </motion.p>
 
-              {/* CTAs */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 2.0, ease }}
+                transition={{ duration: 0.8, delay: 1.8, ease }}
                 className="flex flex-col sm:flex-row items-start gap-4"
               >
                 <a
@@ -464,8 +278,7 @@ export default function Hero() {
                   className="group inline-flex items-center gap-3 px-8 py-4
                     bg-primary text-primary-foreground
                     font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase
-                    rounded-full
-                    hover:bg-background hover:text-foreground
+                    rounded-full hover:bg-background hover:text-foreground
                     transition-all duration-400"
                 >
                   <span>Foglalj órát</span>
@@ -499,18 +312,17 @@ export default function Hero() {
               </motion.div>
             </div>
 
-            {/* Right: Rotating circular text */}
-            <div
-              ref={circleRef}
+            {/* Rotating circular text */}
+            <motion.div
+              style={{ y: circleY, scale: circleScale }}
               className="hidden lg:flex items-center justify-center"
             >
               <motion.div
-                initial={{ opacity: 0, scale: 0.7, rotate: -40 }}
+                initial={{ opacity: 0, scale: 0.7, rotate: -30 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ duration: 1.6, delay: 1.4, ease }}
+                transition={{ duration: 1.4, delay: 1.2, ease }}
                 className="relative"
               >
-                {/* Spinning text ring */}
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{
@@ -546,11 +358,11 @@ export default function Hero() {
                   </svg>
                 </motion.div>
 
-                {/* Center crosshair + dot */}
+                {/* Center crosshair + pulsing dot */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="relative w-7 h-7">
-                    <div className="absolute top-1/2 left-0 w-full h-px bg-background/[0.06] -translate-y-px" />
-                    <div className="absolute top-0 left-1/2 w-px h-full bg-background/[0.06] -translate-x-px" />
+                    <div className="absolute top-1/2 left-0 w-full h-px bg-background/[0.06]" />
+                    <div className="absolute top-0 left-1/2 w-px h-full bg-background/[0.06]" />
                     <motion.div
                       animate={{
                         scale: [1, 1.4, 1],
@@ -571,116 +383,33 @@ export default function Hero() {
                   <div className="w-[85%] h-[85%] rounded-full border border-background/[0.03]" />
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ═══ DEPTH 4: Horizontal composition bar (cinematic lower-third) ═══ */}
-      <div
-        ref={horizCompRef}
-        className="absolute bottom-[100px] left-0 right-0 z-10 pointer-events-none hidden md:block"
-        aria-hidden="true"
-      >
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-16">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2.8, duration: 1.2 }}
-            className="flex items-center gap-6"
-          >
-            {/* Left: location coordinates */}
-            <motion.span
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 3.0, duration: 0.8, ease }}
-              className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.25em] uppercase text-background/10 shrink-0"
-            >
-              47.5°N 21.6°E
-            </motion.span>
-
-            {/* Animated line */}
-            <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 2.8, duration: 1.8, ease }}
-              className="flex-1 h-px bg-gradient-to-r from-background/[0.06] via-primary/[0.12] to-background/[0.02] origin-left"
-            />
-
-            {/* Right: decorative data points */}
-            <div className="flex items-center gap-5 shrink-0">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 3.2, duration: 0.8, ease }}
-                className="flex items-center gap-2"
-              >
-                <div className="w-1 h-1 rounded-full bg-primary/30" />
-                <span className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.2em] uppercase text-background/10">
-                  Est. 2018
-                </span>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 3.4, duration: 0.8, ease }}
-                className="flex items-center gap-2"
-              >
-                <div className="w-1 h-1 rounded-full bg-primary/30" />
-                <span className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.2em] uppercase text-background/10">
-                  6 fős csoportok
-                </span>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* ═══ DEPTH 4: Vertical side label ═══ */}
+      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 3.0, duration: 1.5 }}
-        className="absolute right-6 lg:right-16 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col items-center gap-4 pointer-events-none"
-        aria-hidden="true"
-      >
-        <div className="w-px h-12 bg-background/[0.04]" />
-        <span
-          className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.35em] uppercase text-background/8"
-          style={{ writingMode: "vertical-rl" }}
-        >
-          Pilates Studio
-        </span>
-        <div className="w-px h-12 bg-background/[0.04]" />
-      </motion.div>
-
-      {/* ═══ DEPTH 5: Scroll indicator ═══ */}
-      <div
-        ref={scrollIndicatorRef}
+        transition={{ delay: 2.8, duration: 1 }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10"
       >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 3.2, duration: 1.2 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <span className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.4em] uppercase text-background/12">
-            Görgess
-          </span>
-          <div className="w-px h-10 bg-background/[0.05] relative overflow-hidden">
-            <motion.div
-              animate={{ y: ["-100%", "200%"] }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-x-0 h-1/3 bg-primary/25"
-            />
-          </div>
-        </motion.div>
-      </div>
+        <span className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.4em] uppercase text-background/12">
+          Görgess
+        </span>
+        <div className="w-px h-10 bg-background/[0.05] relative overflow-hidden">
+          <motion.div
+            animate={{ y: ["-100%", "200%"] }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute inset-x-0 h-1/3 bg-primary/25"
+          />
+        </div>
+      </motion.div>
     </section>
   );
 }
