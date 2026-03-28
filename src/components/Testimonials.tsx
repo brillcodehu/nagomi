@@ -356,11 +356,10 @@ export default function Testimonials() {
       >
         {/* Outline layer (always visible) */}
         <span
-          className="ghost-text-light font-[family-name:var(--font-playfair)]"
+          className="ghost-text-light font-[family-name:var(--font-playfair)] block w-full text-center"
           style={{
-            fontSize: "clamp(6rem, 16vw, 16rem)",
-            marginLeft: "-3%",
-            marginBottom: "-2%",
+            fontSize: "19.5vw",
+            marginBottom: "-1.5%",
           }}
         >
           REVIEWS
@@ -368,11 +367,10 @@ export default function Testimonials() {
         {/* Solid fill layer (clips from bottom-to-top on scroll) */}
         <span
           ref={reviewsFillRef}
-          className="absolute bottom-0 left-0 font-[family-name:var(--font-playfair)]"
+          className="absolute bottom-0 left-0 w-full text-center font-[family-name:var(--font-playfair)]"
           style={{
-            fontSize: "clamp(6rem, 16vw, 16rem)",
-            marginLeft: "-3%",
-            marginBottom: "-2%",
+            fontSize: "19.5vw",
+            marginBottom: "-1.5%",
             color: "var(--foreground)",
             opacity: 0.12,
             fontWeight: 900,
