@@ -187,15 +187,16 @@ export default function Schedule() {
       {
         opacity: 0,
         y: 12,
-        clipPath: "inset(0 100% 0 0)",
       },
       {
         opacity: 1,
         y: 0,
-        clipPath: "inset(0 0% 0 0)",
         duration: 0.5,
         ease: "power3.out",
         stagger: 0.04,
+        onComplete: () => {
+          gsap.set(cards, { clearProps: "all" });
+        },
       }
     );
   }, [schedule.weekStart, schedule.filters, schedule.slots]);
