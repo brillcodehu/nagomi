@@ -1,7 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -22,37 +26,107 @@ const contactInfo = [
 
 export default function Contact() {
   const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const infoRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-10%" });
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const ctx = gsap.context(() => {
+      // Heading theatrical entrance
+      if (headingRef.current) {
+        const lines = headingRef.current.querySelectorAll(
+          ".contact-line-inner"
+        );
+        gsap.fromTo(
+          lines,
+          { yPercent: 120, skewY: 5 },
+          {
+            yPercent: 0,
+            skewY: 0,
+            duration: 1.3,
+            ease: "power4.out",
+            stagger: 0.15,
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Info items line clip wipe reveal
+      if (infoRef.current) {
+        const items = infoRef.current.querySelectorAll(".contact-info-item");
+        gsap.fromTo(
+          items,
+          {
+            opacity: 0,
+            clipPath: "inset(0 100% 0 0)",
+          },
+          {
+            opacity: 1,
+            clipPath: "inset(0 0% 0 0)",
+            duration: 0.9,
+            ease: "power3.inOut",
+            stagger: 0.12,
+            scrollTrigger: {
+              trigger: infoRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
       ref={sectionRef}
       id="kapcsolat"
-      className="relative py-28 md:py-40 overflow-hidden"
+      className="section-scene relative py-28 md:py-40 overflow-hidden"
     >
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-16">
+      {/* Depth 0: Atmospheric gradient */}
+      <div
+        className="depth-layer"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 30% 70%, rgba(154,131,99,0.03), transparent)",
+        }}
+      />
+
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-16 relative z-10">
         {/* Header */}
         <div className="mb-16 md:mb-24">
           <motion.span
             initial={{ opacity: 0, y: 15 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
-            className="inline-block text-[11px] tracking-[0.3em] uppercase font-medium text-primary mb-8"
+            className="inline-block text-[11px] tracking-[0.3em] uppercase font-semibold text-foreground/70 mb-8"
           >
             Kapcsolat
           </motion.span>
 
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.1, ease }}
+            <h2
+              ref={headingRef}
               className="font-[family-name:var(--font-playfair)] text-[clamp(2.2rem,4vw,3.8rem)] font-medium leading-[1.1] tracking-[-0.02em] text-foreground"
             >
-              Kezdd el az
-              <br />
-              <span className="italic">utazásod.</span>
-            </motion.h2>
+              <span className="split-line">
+                <span className="contact-line-inner">Kezdd el az</span>
+              </span>
+              <span className="split-line">
+                <span className="contact-line-inner">
+                  <span className="italic">utazásod.</span>
+                </span>
+              </span>
+            </h2>
 
             <motion.p
               initial={{ opacity: 0, y: 15 }}
@@ -66,17 +140,15 @@ export default function Contact() {
           </div>
         </div>
 
-        {/* Contact info grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.3, ease }}
+        {/* Contact info grid with clip wipe reveal */}
+        <div
+          ref={infoRef}
           className="grid md:grid-cols-3 gap-0 border-t border-foreground/[0.06]"
         >
           {contactInfo.map((item) => (
             <div
               key={item.label}
-              className="py-10 md:py-14 md:pr-12 border-b md:border-b-0 md:border-r last:border-b-0 last:border-r-0 border-foreground/[0.06]"
+              className="contact-info-item py-10 md:py-14 md:pr-12 border-b md:border-b-0 md:border-r last:border-b-0 last:border-r-0 border-foreground/[0.06]"
             >
               <span className="text-[10px] tracking-[0.25em] uppercase font-medium text-muted-foreground/50 block mb-5">
                 {item.label}
@@ -86,7 +158,7 @@ export default function Contact() {
               </p>
             </div>
           ))}
-        </motion.div>
+        </div>
 
         {/* Social */}
         <motion.div

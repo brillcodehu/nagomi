@@ -148,7 +148,7 @@ export default function Navigation() {
               {/* ── Mobile hamburger ── */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden relative z-10 w-10 h-10 flex flex-col items-center justify-center gap-[5px]"
+                className="lg:hidden relative z-10 w-11 h-11 flex flex-col items-center justify-center gap-[5px] cursor-pointer"
                 aria-label="Menü megnyitása"
               >
                 <motion.span

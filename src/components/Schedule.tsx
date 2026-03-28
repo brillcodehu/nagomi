@@ -1,7 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const schedule = [
   {
@@ -50,15 +54,83 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function Schedule() {
   const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-10%" });
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const ctx = gsap.context(() => {
+      // Heading masked reveal
+      if (headingRef.current) {
+        const lines = headingRef.current.querySelectorAll(
+          ".schedule-line-inner"
+        );
+        gsap.fromTo(
+          lines,
+          { yPercent: 110 },
+          {
+            yPercent: 0,
+            duration: 1.2,
+            ease: "power4.out",
+            stagger: 0.12,
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Schedule rows stagger from left with line wipe
+      if (rowsRef.current) {
+        const rows = rowsRef.current.querySelectorAll(".schedule-row");
+        gsap.fromTo(
+          rows,
+          {
+            opacity: 0,
+            x: -40,
+            clipPath: "inset(0 100% 0 0)",
+          },
+          {
+            opacity: 1,
+            x: 0,
+            clipPath: "inset(0 0% 0 0)",
+            duration: 0.8,
+            ease: "power3.out",
+            stagger: 0.08,
+            scrollTrigger: {
+              trigger: rowsRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
       ref={sectionRef}
       id="idopontok"
-      className="relative py-28 md:py-40 overflow-hidden"
+      className="section-scene relative py-28 md:py-40 overflow-hidden"
     >
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-16">
+      {/* Depth 0: Subtle gradient */}
+      <div
+        className="depth-layer"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 50% at 80% 60%, rgba(154,131,99,0.025), transparent)",
+        }}
+      />
+
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-16 relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 md:mb-24">
           <div>
@@ -66,19 +138,21 @@ export default function Schedule() {
               initial={{ opacity: 0, y: 15 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6 }}
-              className="inline-block text-[11px] tracking-[0.3em] uppercase font-medium text-primary mb-8"
+              className="inline-block text-[11px] tracking-[0.3em] uppercase font-semibold text-foreground/70 mb-8"
             >
               Órarend
             </motion.span>
 
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.1, ease }}
+            <h2
+              ref={headingRef}
               className="font-[family-name:var(--font-playfair)] text-[clamp(2.2rem,4vw,3.8rem)] font-medium leading-[1.1] tracking-[-0.02em] text-foreground"
             >
-              Heti <span className="italic">időpontok.</span>
-            </motion.h2>
+              <span className="split-line">
+                <span className="schedule-line-inner">
+                  Heti <span className="italic">időpontok.</span>
+                </span>
+              </span>
+            </h2>
           </div>
 
           <motion.div
@@ -100,19 +174,12 @@ export default function Schedule() {
           </motion.div>
         </div>
 
-        {/* Schedule rows */}
-        <div>
-          {schedule.map((day, dayIndex) => (
-            <motion.div
+        {/* Schedule rows with line wipe reveal */}
+        <div ref={rowsRef}>
+          {schedule.map((day) => (
+            <div
               key={day.day}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{
-                duration: 0.5,
-                delay: dayIndex * 0.06 + 0.3,
-                ease,
-              }}
-              className="grid grid-cols-12 gap-4 items-start py-6 border-t border-foreground/[0.06] last:border-b"
+              className="schedule-row grid grid-cols-12 gap-4 items-start py-6 border-t border-foreground/[0.06] last:border-b"
             >
               <div className="col-span-12 md:col-span-2">
                 <span className="text-[13px] tracking-[0.15em] uppercase font-medium text-foreground/70">
@@ -153,7 +220,7 @@ export default function Schedule() {
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 

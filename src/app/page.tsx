@@ -7,6 +7,7 @@ import Schedule from "@/components/Schedule";
 import Testimonials from "@/components/Testimonials";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import ScrollReveal from "@/components/ScrollReveal";
 
 export default function Home() {
   return (
@@ -14,11 +15,21 @@ export default function Home() {
       <Navigation />
       <Hero />
       <Marquee />
-      <About />
-      <Classes />
-      <Schedule />
-      <Testimonials />
-      <Contact />
+      <ScrollReveal type="fade-up">
+        <About />
+      </ScrollReveal>
+      <ScrollReveal type="clip-top">
+        <Classes />
+      </ScrollReveal>
+      <ScrollReveal type="fade-up">
+        <Schedule />
+      </ScrollReveal>
+      <ScrollReveal type="clip-iris">
+        <Testimonials />
+      </ScrollReveal>
+      <ScrollReveal type="curtain">
+        <Contact />
+      </ScrollReveal>
       <Footer />
     </main>
   );

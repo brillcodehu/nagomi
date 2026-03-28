@@ -17,7 +17,7 @@
 
   --card-foreground: #2B2A20;
   --popover-foreground: #2B2A20;
-  --primary-foreground: #F5F0E8;
+  --primary-foreground: #FFFFFF;
   --secondary-foreground: #2B2A20;
   --muted-foreground: #8A857A;
   --accent-foreground: #2B2A20;
@@ -55,7 +55,7 @@
    ═══════════════════════════════════════ */
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
@@ -68,6 +68,21 @@ body {
 ::selection {
   background: var(--primary);
   color: var(--primary-foreground);
+}
+
+/* ═══════════════════════════════════════
+   CUSTOM CURSOR (desktop only)
+   ═══════════════════════════════════════ */
+
+.has-custom-cursor,
+.has-custom-cursor * {
+  cursor: none !important;
+}
+
+.has-custom-cursor a,
+.has-custom-cursor button,
+.has-custom-cursor [role="button"] {
+  cursor: none !important;
 }
 
 /* ═══════════════════════════════════════
@@ -103,9 +118,52 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  opacity: 0.02;
+  opacity: 0.025;
   z-index: 9999;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════
+   GHOST / OUTLINED TEXT
+   ═══════════════════════════════════════ */
+
+.ghost-text {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(245, 240, 232, 0.08);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.ghost-text-light {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(43, 42, 32, 0.04);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════
+   SPLIT TEXT CHARACTERS
+   ═══════════════════════════════════════ */
+
+.split-char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.split-line {
+  display: block;
+  overflow: hidden;
+}
+
+.split-line-inner {
+  display: block;
+  will-change: transform;
 }
 
 /* ═══════════════════════════════════════
@@ -133,12 +191,42 @@ body {
   }
 }
 
+@keyframes float-y {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+}
+
+@keyframes float-orbit {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(8px, -12px) rotate(1.5deg); }
+  50% { transform: translate(0, -20px) rotate(0deg); }
+  75% { transform: translate(-8px, -12px) rotate(-1.5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes float-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.06); opacity: 0.7; }
+}
+
 /* ═══════════════════════════════════════
    ANIMATION UTILITIES
    ═══════════════════════════════════════ */
 
 .animate-marquee {
   animation: marquee-scroll var(--marquee-duration, 40s) linear infinite;
+}
+
+.float-y {
+  animation: float-y 10s ease-in-out infinite;
+}
+
+.float-orbit {
+  animation: float-orbit 8s ease-in-out infinite;
+}
+
+.float-breathe {
+  animation: float-breathe 12s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════
@@ -148,6 +236,11 @@ body {
 .mask-fade-x {
   mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.mask-fade-y {
+  mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
 }
 
 /* ═══════════════════════════════════════
@@ -164,6 +257,47 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   SECTION DEPTH / CINEMATIC
+   ═══════════════════════════════════════ */
+
+.section-scene {
+  position: relative;
+  overflow: hidden;
+}
+
+.depth-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════
+   HORIZONTAL RULE ANIMATION
+   ═══════════════════════════════════════ */
+
+.hr-reveal {
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+/* ═══════════════════════════════════════
+   FOCUS STATES (ACCESSIBILITY)
+   ═══════════════════════════════════════ */
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+a:focus-visible.rounded-full,
+button:focus-visible.rounded-full {
+  border-radius: 9999px;
+}
+
+/* ═══════════════════════════════════════
    REDUCED MOTION
    ═══════════════════════════════════════ */
 
@@ -175,5 +309,11 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .split-char,
+  .split-line-inner {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

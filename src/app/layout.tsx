@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Space_Mono } from "next/font/google";
 import "./globals.css";
+import SmoothScroll from "@/components/SmoothScroll";
+import CustomCursor from "@/components/CustomCursor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,7 +32,7 @@ export const metadata: Metadata = {
     "reformer pilates",
     "studio",
     "nagomi",
-    "budapest",
+    "debrecen",
     "wellness",
   ],
 };
@@ -45,7 +47,12 @@ export default function RootLayout({
       lang="hu"
       className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col grain-overlay">{children}</body>
+      <body className="min-h-full flex flex-col grain-overlay">
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
+        <CustomCursor />
+      </body>
     </html>
   );
 }

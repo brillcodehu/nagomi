@@ -1,24 +1,52 @@
 "use client";
 
-import { useRef, useCallback } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef, useCallback, useEffect } from "react";
+import { motion } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const CIRCLE_TEXT = "NAGOMI  \u2022  REFORMER PILATES  \u2022  DEBRECEN  \u2022  ";
+const GHOST_TEXT = "NAGOMI";
+
+// Split text into character spans for animation
+function SplitChars({
+  text,
+  className = "",
+  charClassName = "",
+}: {
+  text: string;
+  className?: string;
+  charClassName?: string;
+}) {
+  return (
+    <span className={className} aria-label={text}>
+      {text.split("").map((char, i) => (
+        <span
+          key={i}
+          className={`split-char ${charClassName}`}
+          aria-hidden="true"
+          style={{ opacity: 0, transform: "translateY(110%)" }}
+        >
+          {char === " " ? "\u00A0" : char}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export default function Hero() {
   const containerRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
+  const contentRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const circleRef = useRef<HTMLDivElement>(null);
+  const accentRef = useRef<HTMLDivElement>(null);
+  const scrollIndicatorRef = useRef<HTMLDivElement>(null);
 
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-  const contentY = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const circleY = useTransform(scrollYProgress, [0, 1], [0, -50]);
-  const circleRotateBoost = useTransform(scrollYProgress, [0, 1], [0, 45]);
-
+  // Mouse-following glow (CSS custom properties, zero re-renders)
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -30,23 +58,162 @@ export default function Hero() {
     []
   );
 
+  // GSAP ScrollTrigger - scroll-driven parallax exit + ghost text parallax
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const ctx = gsap.context(() => {
+      const section = containerRef.current;
+      if (!section) return;
+
+      // Split text character animation on load
+      const chars = section.querySelectorAll(".hero-char");
+      gsap.to(chars, {
+        opacity: 1,
+        y: 0,
+        duration: 1.1,
+        ease: "power4.out",
+        stagger: 0.03,
+        delay: 0.6,
+      });
+
+      // Ghost text parallax on scroll
+      if (ghostRef.current) {
+        gsap.to(ghostRef.current, {
+          xPercent: -15,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "bottom top",
+            scrub: 1.5,
+          },
+        });
+      }
+
+      // Content parallax exit on scroll
+      if (contentRef.current) {
+        gsap.to(contentRef.current, {
+          y: 150,
+          opacity: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "70% top",
+            scrub: 0.8,
+          },
+        });
+      }
+
+      // Circle element parallax (moves slower, creates depth)
+      if (circleRef.current) {
+        gsap.to(circleRef.current, {
+          y: -80,
+          scale: 0.85,
+          opacity: 0.3,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "80% top",
+            scrub: 1,
+          },
+        });
+      }
+
+      // Accent line draw
+      if (accentRef.current) {
+        gsap.fromTo(
+          accentRef.current,
+          { scaleX: 0 },
+          {
+            scaleX: 1,
+            duration: 1.2,
+            delay: 1.8,
+            ease: "power3.out",
+          }
+        );
+      }
+
+      // Scroll indicator fade out on scroll
+      if (scrollIndicatorRef.current) {
+        gsap.to(scrollIndicatorRef.current, {
+          opacity: 0,
+          y: 20,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "10% top",
+            end: "25% top",
+            scrub: 0.5,
+          },
+        });
+      }
+
+      // Decorative frame lines parallax
+      const frameLines = section.querySelectorAll(".frame-line");
+      frameLines.forEach((line, i) => {
+        gsap.to(line, {
+          y: 40 + i * 20,
+          opacity: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "60% top",
+            scrub: 1,
+          },
+        });
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <section
       ref={containerRef}
       onMouseMove={handleMouseMove}
       className="relative h-[100svh] min-h-[700px] overflow-hidden bg-foreground"
-      style={{ "--glow-x": "50%", "--glow-y": "50%" } as React.CSSProperties}
+      style={
+        { "--glow-x": "50%", "--glow-y": "50%" } as React.CSSProperties
+      }
     >
-      {/* ═══ LAYER 1: Ambient gradient orbs ═══ */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* ═══ DEPTH 0: Ghost outlined text (far background) ═══ */}
+      <div
+        ref={ghostRef}
+        className="absolute inset-0 flex items-center pointer-events-none overflow-hidden"
+        aria-hidden="true"
+      >
+        <span
+          className="ghost-text font-[family-name:var(--font-playfair)]"
+          style={{
+            fontSize: "clamp(10rem, 28vw, 28rem)",
+            marginLeft: "-5%",
+          }}
+        >
+          {GHOST_TEXT}
+        </span>
+      </div>
+
+      {/* ═══ DEPTH 1: Ambient gradient orbs ═══ */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+      >
         <motion.div
           animate={{
             x: [0, 40, -20, 0],
             y: [0, -50, 30, 0],
             scale: [1, 1.1, 0.95, 1],
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[15%] right-[5%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-primary/[0.06] blur-[150px]"
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -top-[15%] right-[5%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-primary/[0.07] blur-[150px]"
         />
         <motion.div
           animate={{
@@ -54,20 +221,28 @@ export default function Hero() {
             y: [0, 40, -30, 0],
             scale: [1, 0.95, 1.05, 1],
           }}
-          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-[10%] -left-[10%] w-[45vw] h-[45vw] max-w-[600px] max-h-[600px] rounded-full bg-secondary/[0.04] blur-[130px]"
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -bottom-[10%] -left-[10%] w-[45vw] h-[45vw] max-w-[600px] max-h-[600px] rounded-full bg-secondary/[0.05] blur-[130px]"
         />
         <motion.div
           animate={{
             x: [0, 20, -30, 0],
             y: [0, -20, 25, 0],
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[40%] right-[30%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] rounded-full bg-accent/[0.03] blur-[100px]"
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-[40%] right-[30%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] rounded-full bg-accent/[0.04] blur-[100px]"
         />
       </div>
 
-      {/* ═══ LAYER 2: Dot grid ═══ */}
+      {/* ═══ DEPTH 1: Dot grid ═══ */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
@@ -78,43 +253,49 @@ export default function Hero() {
         }}
       />
 
-      {/* ═══ LAYER 3: Mouse-following glow ═══ */}
+      {/* ═══ DEPTH 2: Mouse-following glow ═══ */}
       <div
         className="absolute inset-0 pointer-events-none opacity-70"
         aria-hidden="true"
         style={{
           background:
-            "radial-gradient(900px circle at var(--glow-x) var(--glow-y), rgba(154,131,99,0.05), transparent 50%)",
+            "radial-gradient(900px circle at var(--glow-x) var(--glow-y), rgba(154,131,99,0.06), transparent 50%)",
         }}
       />
 
-      {/* ═══ LAYER 4: Decorative frame lines ═══ */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* ═══ DEPTH 2: Decorative frame lines ═══ */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+      >
         <motion.div
           initial={{ scaleY: 0 }}
           animate={{ scaleY: 1 }}
-          transition={{ duration: 1.8, delay: 2, ease }}
-          className="absolute top-[12%] left-6 lg:left-16 w-px h-[25%] bg-background/[0.05] origin-top"
+          transition={{ duration: 1.8, delay: 2.2, ease }}
+          className="frame-line absolute top-[12%] left-6 lg:left-16 w-px h-[25%] bg-background/[0.05] origin-top"
         />
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
-          transition={{ duration: 1.5, delay: 2.2, ease }}
-          className="absolute bottom-[12%] right-6 lg:right-16 w-[12%] h-px bg-background/[0.05] origin-right"
+          transition={{ duration: 1.5, delay: 2.4, ease }}
+          className="frame-line absolute bottom-[12%] right-6 lg:right-16 w-[12%] h-px bg-background/[0.05] origin-right"
         />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 2.5 }}
-          className="absolute top-[12%] right-6 lg:right-16"
+          transition={{ duration: 1, delay: 2.7 }}
+          className="frame-line absolute top-[12%] right-6 lg:right-16"
         >
           <div className="w-[30px] h-px bg-background/[0.04]" />
           <div className="w-px h-[30px] bg-background/[0.04] absolute top-0 right-0" />
         </motion.div>
       </div>
 
-      {/* ═══ LAYER 5: Floating particles ═══ */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* ═══ DEPTH 3: Floating particles ═══ */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+      >
         <motion.div
           animate={{
             y: [0, -25, 0],
@@ -169,16 +350,46 @@ export default function Hero() {
           }}
           className="absolute top-[75%] right-[25%] w-[4px] h-[4px] rounded-full bg-primary/20"
         />
+        {/* Extra depth-5 particle */}
+        <motion.div
+          animate={{
+            y: [0, -30, 0],
+            x: [0, 15, 0],
+            opacity: [0.04, 0.1, 0.04],
+          }}
+          transition={{
+            duration: 14,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 4,
+          }}
+          className="absolute top-[35%] left-[35%] w-[6px] h-[6px] rounded-full bg-primary/15"
+        />
+        <motion.div
+          animate={{
+            y: [0, 18, 0],
+            x: [0, -12, 0],
+            rotate: [0, 90, 0],
+            opacity: [0.03, 0.08, 0.03],
+          }}
+          transition={{
+            duration: 16,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 8,
+          }}
+          className="absolute bottom-[18%] right-[38%] w-[18px] h-px bg-background/15"
+        />
       </div>
 
-      {/* ═══ LAYER 6: Main content ═══ */}
-      <motion.div
-        style={{ y: contentY, opacity: contentOpacity }}
+      {/* ═══ DEPTH 4: Main content ═══ */}
+      <div
+        ref={contentRef}
         className="relative z-10 flex items-center h-full"
       >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
-            {/* ── Left: Text ── */}
+            {/* Left: Text */}
             <div className="max-w-2xl">
               {/* Kicker */}
               <motion.p
@@ -190,43 +401,36 @@ export default function Hero() {
                 Premium Reformer Pilates &middot; Debrecen
               </motion.p>
 
-              {/* Headline */}
+              {/* Headline - Split character animation */}
               <h1 className="mb-8">
-                <span className="block overflow-hidden">
-                  <motion.span
-                    initial={{ y: "120%" }}
-                    animate={{ y: "0%" }}
-                    transition={{ duration: 1.3, delay: 0.5, ease }}
+                <span className="split-line">
+                  <SplitChars
+                    text="Találj rá"
                     className="block font-[family-name:var(--font-playfair)] text-[clamp(3.2rem,9vw,8.5rem)] font-medium leading-[0.88] tracking-[-0.03em] text-background"
-                  >
-                    Találj rá
-                  </motion.span>
+                    charClassName="hero-char"
+                  />
                 </span>
-                <span className="block overflow-hidden mt-1">
-                  <motion.span
-                    initial={{ y: "120%" }}
-                    animate={{ y: "0%" }}
-                    transition={{ duration: 1.3, delay: 0.7, ease }}
+                <span className="split-line mt-1">
+                  <SplitChars
+                    text="önmagadra."
                     className="block font-[family-name:var(--font-playfair)] text-[clamp(3.2rem,9vw,8.5rem)] font-medium leading-[0.88] tracking-[-0.03em] text-background/85 italic"
-                  >
-                    önmagadra.
-                  </motion.span>
+                    charClassName="hero-char"
+                  />
                 </span>
               </h1>
 
               {/* Animated accent line */}
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 1.2, delay: 1.4, ease }}
-                className="w-20 h-[1.5px] bg-gradient-to-r from-primary/50 to-primary/0 origin-left mb-10"
+              <div
+                ref={accentRef}
+                className="w-24 h-[1.5px] bg-gradient-to-r from-primary/60 via-primary/30 to-transparent origin-left mb-10"
+                style={{ transform: "scaleX(0)" }}
               />
 
               {/* Description */}
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.6, ease }}
+                transition={{ duration: 0.8, delay: 1.8, ease }}
                 className="text-[15px] md:text-[16px] text-background/30 font-light max-w-md leading-[1.85] mb-12"
               >
                 Kis csoportos reformer pilates órák egyéni figyelemmel.
@@ -237,7 +441,7 @@ export default function Hero() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.8, ease }}
+                transition={{ duration: 0.8, delay: 2.0, ease }}
                 className="flex flex-col sm:flex-row items-start gap-4"
               >
                 <a
@@ -280,15 +484,15 @@ export default function Hero() {
               </motion.div>
             </div>
 
-            {/* ── Right: Rotating circular text ── */}
-            <motion.div
-              style={{ y: circleY }}
+            {/* Right: Rotating circular text */}
+            <div
+              ref={circleRef}
               className="hidden lg:flex items-center justify-center"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.7, rotate: -40 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ duration: 1.6, delay: 1.2, ease }}
+                transition={{ duration: 1.6, delay: 1.4, ease }}
                 className="relative"
               >
                 {/* Spinning text ring */}
@@ -299,7 +503,6 @@ export default function Hero() {
                     repeat: Infinity,
                     ease: "linear",
                   }}
-                  style={{ rotate: circleRotateBoost }}
                 >
                   <svg
                     viewBox="0 0 300 300"
@@ -353,33 +556,38 @@ export default function Hero() {
                   <div className="w-[85%] h-[85%] rounded-full border border-background/[0.03]" />
                 </div>
               </motion.div>
-            </motion.div>
+            </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* ═══ LAYER 7: Scroll indicator ═══ */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 3, duration: 1.2 }}
+      {/* ═══ DEPTH 5: Scroll indicator ═══ */}
+      <div
+        ref={scrollIndicatorRef}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10"
       >
-        <span className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.4em] uppercase text-background/12">
-          Görgess
-        </span>
-        <div className="w-px h-10 bg-background/[0.05] relative overflow-hidden">
-          <motion.div
-            animate={{ y: ["-100%", "200%"] }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="absolute inset-x-0 h-1/3 bg-primary/25"
-          />
-        </div>
-      </motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 3.2, duration: 1.2 }}
+          className="flex flex-col items-center gap-3"
+        >
+          <span className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.4em] uppercase text-background/12">
+            Görgess
+          </span>
+          <div className="w-px h-10 bg-background/[0.05] relative overflow-hidden">
+            <motion.div
+              animate={{ y: ["-100%", "200%"] }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="absolute inset-x-0 h-1/3 bg-primary/25"
+            />
+          </div>
+        </motion.div>
+      </div>
     </section>
   );
 }
