@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -368,15 +369,35 @@ export default function About() {
       id="rolunk"
       className="section-scene relative overflow-hidden"
     >
+      {/* ═══ Depth-0: Pilates illustration ghost (atmospheric) ═══ */}
+      <div className="depth-layer" aria-hidden="true">
+        <div
+          className="absolute left-[5%] top-[3%] w-[90%] h-[94%] lg:left-[15%] lg:w-[70%]"
+          style={{
+            backgroundImage: "url(/pilateshero.png)",
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            mixBlendMode: "multiply",
+            opacity: 0.045,
+            filter: "grayscale(0.4) saturate(0.6)",
+            maskImage:
+              "radial-gradient(ellipse 80% 70% at 50% 50%, black 10%, transparent 65%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 70% at 50% 50%, black 10%, transparent 65%)",
+          }}
+        />
+      </div>
+
       {/* ═══ Depth-0: Organic background blobs ═══ */}
       <div
         className="depth-layer"
         aria-hidden="true"
         style={{
           background: [
-            "radial-gradient(ellipse 40% 35% at 15% 30%, rgba(154,131,99,0.07), transparent 70%)",
-            "radial-gradient(ellipse 35% 40% at 85% 65%, rgba(196,185,154,0.06), transparent 70%)",
-            "radial-gradient(ellipse 30% 25% at 55% 90%, rgba(212,201,181,0.05), transparent 65%)",
+            "radial-gradient(ellipse 45% 40% at 12% 25%, rgba(154,131,99,0.08), transparent 70%)",
+            "radial-gradient(ellipse 40% 45% at 88% 60%, rgba(196,185,154,0.07), transparent 70%)",
+            "radial-gradient(ellipse 35% 30% at 55% 90%, rgba(212,201,181,0.06), transparent 65%)",
           ].join(", "),
         }}
       />
@@ -389,11 +410,11 @@ export default function About() {
 
       {/* ═══ Depth-0: Botanical elements (desktop only) ═══ */}
       <div className="depth-layer overflow-hidden hidden lg:block" aria-hidden="true">
-        <div className="about-botanical absolute right-[-4%] top-[3%] w-[200px] h-[500px] xl:w-[240px] xl:h-[600px]">
-          <PampasGrass className="w-full h-full text-foreground/[0.15] rotate-[12deg]" />
+        <div className="about-botanical absolute right-[-6%] top-[-2%] w-[300px] h-[750px] xl:w-[360px] xl:h-[900px]">
+          <PampasGrass className="w-full h-full text-foreground/[0.06] rotate-[12deg]" />
         </div>
-        <div className="about-botanical absolute left-[6%] bottom-[-8%] w-[140px] h-[370px] xl:w-[170px] xl:h-[450px]">
-          <EucalyptusBranch className="w-full h-full text-primary/[0.12] rotate-[-8deg]" />
+        <div className="about-botanical absolute left-[3%] bottom-[-12%] w-[220px] h-[580px] xl:w-[260px] xl:h-[700px]">
+          <EucalyptusBranch className="w-full h-full text-primary/[0.07] rotate-[-8deg]" />
         </div>
       </div>
 
@@ -420,28 +441,13 @@ export default function About() {
                 className="relative aspect-[4/5] rounded-2xl overflow-hidden image-placeholder"
                 style={{ clipPath: "inset(0 0 100% 0)" }}
               >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full border border-foreground/10 flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-foreground/20"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-foreground/20 text-[10px] tracking-[0.2em] uppercase font-medium">
-                      Stúdió fotó
-                    </p>
-                  </div>
-                </div>
+                <Image
+                  src="/studioimg.png"
+                  alt="Nagomi Pilates Stúdió belső tere reformer gépekkel"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
               </div>
             </div>
 
