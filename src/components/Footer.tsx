@@ -113,26 +113,17 @@ export default function Footer() {
       ref={footerRef}
       className="relative bg-foreground overflow-hidden"
     >
-      {/* ═══ Map background: direct image, bright center fading out ═══ */}
+      {/* ═══ Depth 0: Atmospheric gradients ═══ */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
-      >
-        <div
-          className="absolute inset-[-10%]"
-          style={{
-            backgroundImage: "url(/footerimage.png)",
-            backgroundSize: "cover",
-            backgroundPosition: "center top",
-            backgroundRepeat: "no-repeat",
-            opacity: 0.45,
-            maskImage:
-              "radial-gradient(ellipse 55% 50% at 50% 25%, white, rgba(255,255,255,0.3) 50%, transparent 80%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 55% 50% at 50% 25%, white, rgba(255,255,255,0.3) 50%, transparent 80%)",
-          }}
-        />
-      </div>
+        style={{
+          background: [
+            "radial-gradient(ellipse 50% 40% at 30% 30%, rgba(154,131,99,0.06), transparent 70%)",
+            "radial-gradient(ellipse 45% 35% at 75% 70%, rgba(196,185,154,0.04), transparent 65%)",
+          ].join(", "),
+        }}
+      />
 
       {/* ═══ Content ═══ */}
       <div
