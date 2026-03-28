@@ -115,19 +115,19 @@ export default function Hero() {
         aria-hidden="true"
       >
         <div
-          className="absolute right-[-5%] top-[-5%] w-[90%] h-[75%] lg:right-[0%] lg:top-[5%] lg:w-[65%] lg:h-[85%]"
+          className="absolute left-[-5%] top-[10%] w-[110%] h-[80%] lg:left-[5%] lg:top-[12%] lg:w-[90%] lg:h-[88%]"
           style={{
             backgroundImage: "url(/pilateshero.png)",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
-            backgroundPosition: "center right",
+            backgroundPosition: "center",
             filter: "blur(45px) brightness(1.2) saturate(0.3)",
             mixBlendMode: "screen" as const,
-            opacity: 0.035,
+            opacity: 0.04,
             maskImage:
-              "radial-gradient(ellipse 70% 60% at 65% 45%, black, transparent 70%)",
+              "radial-gradient(ellipse 80% 70% at 50% 55%, black, transparent 70%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse 70% 60% at 65% 45%, black, transparent 70%)",
+              "radial-gradient(ellipse 80% 70% at 50% 55%, black, transparent 70%)",
           }}
         />
       </motion.div>
@@ -142,20 +142,20 @@ export default function Hero() {
         aria-hidden="true"
       >
         <div
-          className="absolute right-[-10%] top-[-5%] w-[90%] h-[75%] lg:right-[-3%] lg:top-[2%] lg:w-[58%] lg:h-[88%]"
+          className="absolute left-[-5%] top-[12%] w-[110%] h-[78%] lg:left-[8%] lg:top-[15%] lg:w-[84%] lg:h-[85%]"
           style={{
             backgroundImage: "url(/pilateshero.png)",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
-            backgroundPosition: "center right",
+            backgroundPosition: "center",
             filter:
               "invert(1) sepia(1) saturate(0.35) hue-rotate(5deg) brightness(0.85) contrast(1.5)",
             mixBlendMode: "screen" as const,
-            opacity: 0.06,
+            opacity: 0.069,
             maskImage:
-              "radial-gradient(ellipse 75% 65% at 60% 48%, black 15%, transparent 65%)",
+              "radial-gradient(ellipse 80% 70% at 50% 55%, black 15%, transparent 65%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse 75% 65% at 60% 48%, black 15%, transparent 65%)",
+              "radial-gradient(ellipse 80% 70% at 50% 55%, black 15%, transparent 65%)",
           }}
         />
       </motion.div>
@@ -304,7 +304,7 @@ export default function Hero() {
       {/* ═══ Content ═══ */}
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-center lg:pb-0 pt-[100px] md:pt-[110px] lg:pt-0"
+        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-end lg:pb-[14vh] pt-[100px] md:pt-[110px] lg:pt-0"
       >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
@@ -465,25 +465,6 @@ export default function Hero() {
         </div>
       </motion.div>
 
-      {/* Scroll indicator (desktop only animation) */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10">
-        <span className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.4em] uppercase text-background/12">
-          Görgess
-        </span>
-        <div className="w-px h-10 bg-background/[0.05] relative overflow-hidden">
-          {isDesktop && (
-            <motion.div
-              animate={{ y: ["-100%", "200%"] }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-x-0 h-1/3 bg-primary/25"
-            />
-          )}
-        </div>
-      </div>
     </section>
   );
 }
