@@ -81,12 +81,62 @@ export default function Hero() {
       ref={containerRef}
       className="relative h-[100svh] min-h-[700px] overflow-hidden bg-foreground"
     >
-      {/* Subtle ambient gradient */}
+      {/* ═══ Rich atmospheric background ═══ */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
       >
-        <div className="absolute -top-[20%] right-[0%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-primary/[0.04] blur-[180px]" />
+        {/* Primary warm glow - top right */}
+        <div className="absolute -top-[20%] right-[-5%] w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-primary/[0.06] blur-[180px]" />
+        {/* Secondary warm glow - bottom left */}
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] rounded-full bg-primary/[0.04] blur-[160px]" />
+        {/* Accent glow - center */}
+        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full bg-secondary/[0.03] blur-[140px]" />
+      </div>
+
+      {/* ═══ Ghost kanji 和 (harmony = nagomi) ═══ */}
+      <div
+        className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden"
+        aria-hidden="true"
+      >
+        <motion.span
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 3, delay: 0.8, ease: "easeOut" }}
+          className="text-[min(70vw,700px)] font-bold leading-none select-none"
+          style={{
+            color: "transparent",
+            WebkitTextStroke: "1px rgba(245, 240, 232, 0.025)",
+          }}
+        >
+          和
+        </motion.span>
+      </div>
+
+      {/* ═══ Fine horizontal accent lines ═══ */}
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden"
+        aria-hidden="true"
+      >
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 2, delay: 1.2, ease: "easeOut" }}
+          className="absolute top-[25%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.04] to-transparent origin-left"
+        />
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 2.5, delay: 1.6, ease: "easeOut" }}
+          className="absolute top-[75%] left-0 w-full h-px bg-gradient-to-r from-transparent via-background/[0.03] to-transparent origin-right"
+        />
+        {/* Vertical accent - right third */}
+        <motion.div
+          initial={{ scaleY: 0, opacity: 0 }}
+          animate={{ scaleY: 1, opacity: 1 }}
+          transition={{ duration: 2, delay: 1.8, ease: "easeOut" }}
+          className="absolute top-0 right-[33%] w-px h-full bg-gradient-to-b from-transparent via-background/[0.03] to-transparent origin-top hidden lg:block"
+        />
       </div>
 
       {/* ═══ Botanical elements (desktop only, 3D depth) ═══ */}
@@ -116,7 +166,7 @@ export default function Hero() {
             }}
             style={{ transformStyle: "preserve-3d" }}
           >
-            <MonsteraLeaf className="w-full h-full text-primary/[0.06] rotate-[-15deg]" />
+            <MonsteraLeaf className="w-full h-full text-primary/[0.10] rotate-[-15deg]" />
           </motion.div>
         </motion.div>
 
@@ -142,7 +192,7 @@ export default function Hero() {
             }}
             style={{ transformStyle: "preserve-3d" }}
           >
-            <LotusFlower className="w-full h-full text-secondary/[0.05] rotate-[25deg]" />
+            <LotusFlower className="w-full h-full text-secondary/[0.08] rotate-[25deg]" />
           </motion.div>
         </motion.div>
 
@@ -166,7 +216,7 @@ export default function Hero() {
               delay: 1,
             }}
           >
-            <SimpleLeaf className="w-full h-full text-primary/[0.08] rotate-[45deg]" />
+            <SimpleLeaf className="w-full h-full text-primary/[0.12] rotate-[45deg]" />
           </motion.div>
         </motion.div>
 
@@ -189,7 +239,7 @@ export default function Hero() {
               delay: 5,
             }}
           >
-            <SimpleLeaf className="w-full h-full text-secondary/[0.06] rotate-[-30deg] scale-x-[-1]" />
+            <SimpleLeaf className="w-full h-full text-secondary/[0.10] rotate-[-30deg] scale-x-[-1]" />
           </motion.div>
         </motion.div>
       </div>
@@ -205,7 +255,7 @@ export default function Hero() {
           transition={{ duration: 2, delay: 1.5 }}
           className="absolute right-[-8%] top-[5%] w-[200px] h-[200px]"
         >
-          <MonsteraLeaf className="w-full h-full text-primary/[0.04] rotate-[-20deg]" />
+          <MonsteraLeaf className="w-full h-full text-primary/[0.06] rotate-[-20deg]" />
         </motion.div>
       </div>
 
