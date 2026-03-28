@@ -13,122 +13,93 @@ export default function Hero() {
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-  const textY = useTransform(scrollYProgress, [0, 1], [0, 150]);
-  const blob1Y = useTransform(scrollYProgress, [0, 1], [0, 250]);
-  const blob2Y = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const blob3Y = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const textY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
 
   return (
     <section
       ref={containerRef}
-      className="relative h-[100svh] min-h-[600px] flex items-center justify-center overflow-hidden"
+      className="relative h-[100svh] min-h-[700px] flex items-center overflow-hidden"
     >
-      {/* Background layer */}
-      <motion.div style={{ scale }} className="absolute inset-0" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/30" />
-
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="absolute top-1/4 left-0 w-full h-px bg-foreground" />
-          <div className="absolute top-2/4 left-0 w-full h-px bg-foreground" />
-          <div className="absolute top-3/4 left-0 w-full h-px bg-foreground" />
-          <div className="absolute top-0 left-1/4 w-px h-full bg-foreground" />
-          <div className="absolute top-0 left-2/4 w-px h-full bg-foreground" />
-          <div className="absolute top-0 left-3/4 w-px h-full bg-foreground" />
-        </div>
-
-        {/* Organic blobs with parallax + morph */}
-        <motion.div
-          style={{ y: blob1Y }}
-          className="absolute -top-[10%] -right-[5%] w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] bg-primary/[0.07] blur-[100px] animate-blob-1"
-        />
-        <motion.div
-          style={{ y: blob2Y }}
-          className="absolute -bottom-[5%] -left-[10%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] bg-accent/[0.08] blur-[120px] animate-blob-2"
-        />
-        <motion.div
-          style={{ y: blob3Y }}
-          className="absolute top-[20%] left-[20%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-secondary/[0.06] blur-[80px] animate-blob-3"
-        />
+      {/* Background image placeholder */}
+      <motion.div
+        style={{ scale: imageScale }}
+        className="absolute inset-0"
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 image-placeholder" />
+        <div className="absolute inset-0 bg-foreground/40" />
       </motion.div>
 
       {/* Content */}
       <motion.div
         style={{ y: textY, opacity }}
-        className="relative z-10 text-center px-6 max-w-6xl mx-auto"
+        className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-16"
       >
         {/* Kicker */}
-        <motion.div
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.2, ease }}
-          className="mb-10"
+          transition={{ duration: 0.8, delay: 0.3, ease }}
+          className="text-[11px] tracking-[0.35em] uppercase font-medium text-background/60 mb-8"
         >
-          <span className="inline-flex items-center gap-4 text-[11px] tracking-[0.4em] uppercase text-muted-foreground/40 font-light">
-            <span className="w-8 h-px bg-muted-foreground/20" />
-            Pilates Studio Budapest
-            <span className="w-8 h-px bg-muted-foreground/20" />
-          </span>
-        </motion.div>
+          Premium Reformer Pilates Budapest
+        </motion.p>
 
-        {/* Title with line-by-line reveal */}
-        <h1 className="font-[family-name:var(--font-cormorant)] text-[clamp(3.5rem,11vw,11rem)] font-light leading-[0.85] tracking-tight text-foreground mb-10">
+        {/* Headline */}
+        <h1 className="mb-10">
           <span className="block overflow-hidden">
             <motion.span
               initial={{ y: "110%" }}
               animate={{ y: "0%" }}
-              transition={{ duration: 1.4, delay: 0.4, ease }}
-              className="block"
+              transition={{ duration: 1.2, delay: 0.5, ease }}
+              className="block font-[family-name:var(--font-playfair)] text-[clamp(3rem,8vw,7.5rem)] font-medium leading-[0.95] tracking-[-0.02em] text-background"
             >
-              Talalj ra
+              Találj rá
             </motion.span>
           </span>
           <span className="block overflow-hidden">
             <motion.span
               initial={{ y: "110%" }}
               animate={{ y: "0%" }}
-              transition={{ duration: 1.4, delay: 0.6, ease }}
-              className="block italic text-primary"
+              transition={{ duration: 1.2, delay: 0.65, ease }}
+              className="block font-[family-name:var(--font-playfair)] text-[clamp(3rem,8vw,7.5rem)] font-medium leading-[0.95] tracking-[-0.02em] text-background italic"
             >
-              onmagadra
+              önmagadra.
             </motion.span>
           </span>
         </h1>
 
-        {/* Subtitle */}
+        {/* Description */}
         <motion.p
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 1.1, ease }}
-          className="text-base md:text-lg text-muted-foreground/50 font-light max-w-md mx-auto leading-relaxed mb-14"
+          transition={{ duration: 0.8, delay: 1.1, ease }}
+          className="text-[15px] md:text-[17px] text-background/50 font-light max-w-lg leading-[1.7] mb-12"
         >
-          Premium pilates orak egyeni figyelemmel, ahol a tested es lelked
-          ujra harmoniaba kerul.
+          Kis csoportos reformer pilates órák egyéni figyelemmel,
+          ahol a tested és lelked újra harmóniába kerül.
         </motion.p>
 
         {/* CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 1.4, ease }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-5"
+          transition={{ duration: 0.8, delay: 1.3, ease }}
+          className="flex flex-col sm:flex-row items-start gap-4"
         >
           <a
             href="#foglalj"
-            className="group relative inline-flex items-center gap-3 px-10 py-4 bg-foreground text-background text-[11px] tracking-[0.2em] uppercase font-light rounded-full overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-foreground/15"
+            className="inline-flex items-center gap-3 px-9 py-4 bg-primary text-primary-foreground text-[11px] tracking-[0.2em] uppercase font-medium rounded-full hover:bg-background hover:text-foreground transition-all duration-400"
           >
-            <span className="relative z-10">Foglalj orat</span>
-            <span className="relative z-10 group-hover:translate-x-1 transition-transform duration-300">
-              &rarr;
-            </span>
-            <div className="absolute inset-0 bg-primary translate-y-full group-hover:translate-y-0 transition-transform duration-600 ease-out" />
+            Foglalj órát
+            <span className="text-[10px]">&#x2197;</span>
           </a>
           <a
             href="#rolunk"
-            className="inline-flex items-center gap-3 px-10 py-4 text-foreground/60 text-[11px] tracking-[0.2em] uppercase font-light border border-foreground/10 rounded-full hover:border-foreground/25 hover:text-foreground transition-all duration-500"
+            className="inline-flex items-center gap-3 px-9 py-4 text-background/70 text-[11px] tracking-[0.2em] uppercase font-medium border border-background/20 rounded-full hover:bg-background/10 hover:border-background/40 transition-all duration-400"
           >
-            Ismerd meg a studiot
+            Ismerd meg a stúdiót
           </a>
         </motion.div>
       </motion.div>
@@ -137,17 +108,17 @@ export default function Hero() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.5, duration: 1.5 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
+        transition={{ delay: 2, duration: 1 }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
       >
-        <span className="text-[9px] tracking-[0.4em] uppercase text-muted-foreground/25 font-light">
-          Gorgets
+        <span className="text-[9px] tracking-[0.4em] uppercase text-background/25 font-medium">
+          Görgess
         </span>
-        <div className="relative w-5 h-8 rounded-full border border-foreground/10">
+        <div className="w-[1px] h-10 bg-background/15 relative overflow-hidden">
           <motion.div
-            animate={{ y: [2, 12, 2] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1.5 left-1/2 -translate-x-1/2 w-0.5 h-1.5 rounded-full bg-foreground/30"
+            animate={{ y: ["-100%", "100%"] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-x-0 h-1/2 bg-background/40"
           />
         </div>
       </motion.div>

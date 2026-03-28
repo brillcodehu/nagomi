@@ -1,150 +1,36 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 const classes = [
   {
-    index: "01",
     title: "Mat Pilates",
-    subtitle: "Alapozas & ero",
     description:
-      "Klasszikus pilates gyakorlatok matracon, amik erositik a core-od es javitjak a testtartasod.",
+      "Klasszikus pilates gyakorlatok matrácon, amik erősítik a core-od és javítják a testtartásod. Ideális kiindulópont.",
     duration: "55 perc",
     level: "Minden szint",
+    cta: "Kezdj itt",
   },
   {
-    index: "02",
     title: "Reformer Pilates",
-    subtitle: "Melytizom & formalas",
     description:
-      "Reformer gepen vegzett gyakorlatok, amik intenziven formaljak a tested es novelik a rugalmassagod.",
+      "Gépen végzett intenzív gyakorlatok, melyek formálják tested és növelik rugalmasságod. A stúdió zászlóshajó órája.",
     duration: "50 perc",
-    level: "Kozep / Halado",
+    level: "Közép / Haladó",
+    cta: "Próbáld ki",
   },
   {
-    index: "03",
     title: "Pilates Flow",
-    subtitle: "Harmonia & legzes",
     description:
-      "Lassabb tempoban, a legzesre fokuszalva. Tokeletes stresszoldasra es a test-lelek egyensuly megteremtesere.",
+      "Lassabb tempóban, a légzésre fókuszálva. Tökéletes stresszoldásra és a test-lélek egyensúly megteremtésére.",
     duration: "60 perc",
     level: "Minden szint",
-  },
-  {
-    index: "04",
-    title: "Power Pilates",
-    subtitle: "Intenzitas & kihivas",
-    description:
-      "Magasabb intenzitasu orak haladoknak, dinamikus mozgasokkal es extra kihivasokkal.",
-    duration: "45 perc",
-    level: "Halado",
+    cta: "Fedezd fel",
   },
 ];
 
 const ease = [0.22, 1, 0.36, 1] as const;
-
-function ClassCard({
-  cls,
-  index,
-  isInView,
-}: {
-  cls: (typeof classes)[0];
-  index: number;
-  isInView: boolean;
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateZ(10px)`;
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    card.style.transform =
-      "perspective(800px) rotateY(0deg) rotateX(0deg) translateZ(0px)";
-  }, []);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.9, delay: index * 0.12 + 0.2, ease }}
-    >
-      <div
-        ref={cardRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        className="group relative bg-background/[0.03] backdrop-blur-sm border border-background/[0.06] rounded-3xl p-8 md:p-10 transition-[transform,background,border] duration-500 ease-out cursor-pointer hover:bg-background/[0.07] hover:border-background/[0.12]"
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        {/* Hover glow */}
-        <div
-          className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(195,158,136,0.06), transparent 40%)",
-          }}
-          aria-hidden="true"
-        />
-
-        <div className="relative">
-          {/* Index number */}
-          <span className="font-[family-name:var(--font-cormorant)] text-7xl md:text-8xl font-light text-background/[0.04] absolute -top-2 -left-1 select-none pointer-events-none">
-            {cls.index}
-          </span>
-
-          <div className="flex items-start justify-between mb-6 pt-4">
-            <div>
-              <h3 className="font-[family-name:var(--font-cormorant)] text-3xl md:text-4xl font-light text-background group-hover:text-chart-3 transition-colors duration-500">
-                {cls.title}
-              </h3>
-              <span className="text-[11px] tracking-[0.2em] uppercase text-chart-3/30 mt-1.5 block">
-                {cls.subtitle}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-[-8px] group-hover:translate-x-0">
-              <span className="text-[11px] tracking-wider text-chart-3/70">
-                Reszletek
-              </span>
-              <span className="text-chart-3/70">&rarr;</span>
-            </div>
-          </div>
-
-          <p className="text-background/30 font-light leading-relaxed mb-8 text-[15px]">
-            {cls.description}
-          </p>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="w-1 h-1 rounded-full bg-chart-3/30" />
-              <span className="text-[10px] tracking-[0.2em] uppercase text-background/25">
-                {cls.duration}
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-1 h-1 rounded-full bg-chart-3/30" />
-              <span className="text-[10px] tracking-[0.2em] uppercase text-background/25">
-                {cls.level}
-              </span>
-            </div>
-          </div>
-
-          {/* Bottom line reveal */}
-          <div className="mt-8 h-px bg-background/[0.04]">
-            <div className="h-full w-0 group-hover:w-full bg-chart-3/15 transition-all duration-700 ease-out" />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function Classes() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -154,58 +40,78 @@ export default function Classes() {
     <section
       ref={sectionRef}
       id="orak"
-      className="relative py-32 md:py-48 bg-foreground overflow-hidden"
+      className="relative py-28 md:py-40 bg-foreground overflow-hidden"
     >
-      {/* Subtle top/bottom lines */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-background/5 to-transparent" />
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-background/5 to-transparent" />
-
-      {/* Background blobs */}
-      <div
-        className="absolute top-[15%] right-[3%] w-[400px] h-[400px] rounded-full bg-primary/[0.03] blur-[120px]"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-[10%] left-[8%] w-[350px] h-[350px] rounded-full bg-accent/[0.03] blur-[100px]"
-        aria-hidden="true"
-      />
-
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-16">
         {/* Header */}
-        <div className="text-center mb-20 md:mb-28">
+        <div className="mb-16 md:mb-24">
           <motion.span
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="inline-block text-[11px] tracking-[0.35em] uppercase text-chart-3/35 mb-6"
+            transition={{ duration: 0.6 }}
+            className="inline-block text-[11px] tracking-[0.3em] uppercase font-medium text-secondary/40 mb-8"
           >
-            Oraink
+            Óráink
           </motion.span>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 40 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 1, delay: 0.1, ease }}
-            className="font-[family-name:var(--font-cormorant)] text-4xl md:text-6xl lg:text-8xl font-light leading-[1] text-background mb-7"
-          >
-            Valaszd ki a <span className="italic text-chart-3">tiedet</span>
-          </motion.h2>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.1, ease }}
+              className="font-[family-name:var(--font-playfair)] text-[clamp(2.2rem,4vw,3.8rem)] font-medium leading-[1.1] tracking-[-0.02em] text-background"
+            >
+              Válaszd ki a
+              <br />
+              <span className="italic">hozzád illőt.</span>
+            </motion.h2>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-background/25 font-light max-w-lg mx-auto text-[15px]"
-          >
-            Minden oratipusunk mas megkozelitest kinal. Kerulj kozelebb a
-            celodhoz a szamodra tokeletes programmal.
-          </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-background/25 font-light max-w-sm text-[15px] leading-relaxed"
+            >
+              Minden óratípusunk más megközelítést kínál.
+              Kerülj közelebb a célodhoz a számodra tökéletes programmal.
+            </motion.p>
+          </div>
         </div>
 
-        {/* Cards grid */}
-        <div className="grid md:grid-cols-2 gap-5 lg:gap-6">
+        {/* Cards */}
+        <div className="grid md:grid-cols-3 gap-5">
           {classes.map((cls, i) => (
-            <ClassCard key={cls.title} cls={cls} index={i} isInView={isInView} />
+            <motion.div
+              key={cls.title}
+              initial={{ opacity: 0, y: 40 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.7, delay: i * 0.1 + 0.3, ease }}
+              className="group bg-card rounded-2xl p-8 md:p-10 flex flex-col justify-between min-h-[380px] hover:shadow-2xl hover:shadow-foreground/10 transition-shadow duration-500"
+            >
+              <div>
+                <h3 className="text-[13px] tracking-[0.2em] uppercase font-semibold text-foreground mb-6">
+                  {cls.title}
+                </h3>
+
+                <p className="text-foreground/50 text-[15px] font-light leading-[1.7] mb-8">
+                  {cls.description}
+                </p>
+
+                <div className="flex items-center gap-5 text-[10px] tracking-[0.2em] uppercase text-muted-foreground/50 font-medium">
+                  <span>{cls.duration}</span>
+                  <span className="w-px h-3 bg-foreground/10" />
+                  <span>{cls.level}</span>
+                </div>
+              </div>
+
+              <a
+                href="#foglalj"
+                className="mt-10 inline-flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase font-semibold text-foreground group-hover:text-primary transition-colors duration-400"
+              >
+                {cls.cta}
+                <span className="text-[10px] group-hover:translate-x-0.5 transition-transform duration-300">&#x2197;</span>
+              </a>
+            </motion.div>
           ))}
         </div>
       </div>

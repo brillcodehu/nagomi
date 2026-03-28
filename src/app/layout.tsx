@@ -1,25 +1,32 @@
 import type { Metadata } from "next";
-import { Outfit, Cormorant_Garamond } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
-  title: "Nagomi | Pilates Studio",
+  title: "Nagomi | Pilates Studio Budapest",
   description:
-    "Fedezd fel a belso nyugalmadat. Premium pilates orak egyedi megkozelitessel, a tested es lelked harmoniajaert.",
-  keywords: ["pilates", "studio", "nagomi", "wellness", "mozgas", "egeszseg"],
+    "Premium reformer pilates studio Budapesten. Egyéni figyelem, kis csoportos órák, professzionális oktatók.",
+  keywords: [
+    "pilates",
+    "reformer pilates",
+    "studio",
+    "nagomi",
+    "budapest",
+    "wellness",
+  ],
 };
 
 export default function RootLayout({
@@ -30,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="hu"
-      className={`${outfit.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col grain-overlay">{children}</body>
     </html>

@@ -3,14 +3,14 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
 
-const stats = [
-  { number: "500+", label: "Elegedett vendeg" },
-  { number: "15+", label: "Heti ora" },
-  { number: "6", label: "Fos maximum" },
-  { number: "100%", label: "Odafigyles" },
-];
-
 const ease = [0.22, 1, 0.36, 1] as const;
+
+const stats = [
+  { number: "500+", label: "Elégedett vendég" },
+  { number: "6", label: "Fős csoportok" },
+  { number: "8+", label: "Év tapasztalat" },
+  { number: "100%", label: "Odafigyelés" },
+];
 
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -22,154 +22,102 @@ export default function About() {
     offset: ["start end", "end start"],
   });
 
-  const imageY = useTransform(scrollYProgress, [0, 1], [100, -100]);
-  const decorY = useTransform(scrollYProgress, [0, 1], [60, -60]);
-  const circleY = useTransform(scrollYProgress, [0, 1], [30, -80]);
-  const lineWidth = useTransform(scrollYProgress, [0.2, 0.5], ["0%", "100%"]);
+  const imageY = useTransform(scrollYProgress, [0, 1], [80, -80]);
 
   return (
     <section
       ref={sectionRef}
       id="rolunk"
-      className="relative py-32 md:py-48 overflow-hidden"
+      className="relative py-28 md:py-40 overflow-hidden"
     >
-      {/* Background accent */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-muted/15 to-transparent" aria-hidden="true" />
-
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
-        <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-16">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
           {/* Image side */}
-          <div className="relative">
-            <motion.div
-              style={{ y: imageY }}
-              className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-chart-3/30 via-card to-accent/20"
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-20 h-20 mx-auto mb-3 rounded-full border border-muted-foreground/15 flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-muted-foreground/30"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-muted-foreground/30 text-xs tracking-[0.2em] uppercase">
-                    Studio foto
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Decorative blob */}
-            <motion.div
-              style={{ y: decorY }}
-              className="absolute -bottom-10 -right-10 w-52 h-52 bg-primary/[0.06] animate-blob-1"
-              aria-hidden="true"
-            />
-
-            {/* Decorative circle */}
-            <motion.div
-              style={{ y: circleY }}
-              className="absolute -top-8 -left-8 w-36 h-36 border border-primary/10 rounded-full"
-              aria-hidden="true"
-            />
-
-            {/* Experience badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, x: 30 }}
-              whileInView={{ opacity: 1, scale: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.5, ease }}
-              className="absolute bottom-10 -right-4 md:right-[-2rem] bg-background/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl shadow-foreground/[0.04]"
-            >
+          <motion.div
+            style={{ y: imageY }}
+            className="relative aspect-[4/5] rounded-2xl overflow-hidden image-placeholder"
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <span className="font-[family-name:var(--font-cormorant)] text-5xl font-light text-primary">
-                  8+
-                </span>
-                <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/40 mt-1">
-                  ev tapasztalat
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full border border-foreground/10 flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-foreground/20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-foreground/20 text-[10px] tracking-[0.2em] uppercase font-medium">
+                  Stúdió fotó
                 </p>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
 
           {/* Text side */}
           <div ref={textRef}>
             <motion.span
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, ease }}
-              className="inline-block text-[11px] tracking-[0.35em] uppercase text-primary/60 mb-6"
+              transition={{ duration: 0.6, ease }}
+              className="inline-block text-[11px] tracking-[0.3em] uppercase font-medium text-primary mb-8"
             >
-              Rolunk
+              Rólunk
             </motion.span>
 
             <motion.h2
-              initial={{ opacity: 0, y: 40 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 1, delay: 0.1, ease }}
-              className="font-[family-name:var(--font-cormorant)] text-4xl md:text-5xl lg:text-7xl font-light leading-[1.05] text-foreground mb-10"
-            >
-              Ahol a mozgas
-              <br />
-              <span className="italic text-primary">muveszette</span> valik
-            </motion.h2>
-
-            {/* Animated divider line */}
-            <motion.div
-              style={{ width: lineWidth }}
-              className="h-px bg-gradient-to-r from-primary/40 to-transparent mb-10 origin-left"
-            />
-
-            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2, ease }}
-              className="space-y-6 text-muted-foreground/60 font-light leading-[1.8] text-[15px]"
+              transition={{ duration: 0.8, delay: 0.1, ease }}
+              className="font-[family-name:var(--font-playfair)] text-[clamp(2.2rem,4vw,3.8rem)] font-medium leading-[1.1] tracking-[-0.02em] text-foreground mb-10"
+            >
+              Ahol a mozgás
+              <br />
+              <span className="italic">művészetté</span> válik.
+            </motion.h2>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.2, ease }}
+              className="space-y-5 text-muted-foreground text-[15px] font-light leading-[1.8] mb-14"
             >
               <p>
-                A Nagomi studioban hiszunk abban, hogy a pilates tobb, mint
-                edzes. Ez egy utazas onmagadhoz, ahol minden mozdulattal kozelebb
-                kerulsz a belso egyensulyodhoz.
+                A Nagomi stúdióban hiszünk abban, hogy a pilates több, mint
+                edzés. Ez egy utazás önmagadhoz, ahol minden mozdulattal közelebb
+                kerülsz a belső egyensúlyodhoz.
               </p>
               <p>
-                Kepzett oktatoink egyeni figyelmet szentelnek minden vendegnek,
-                hogy biztonsagos es hatekony legyen az edzesed. Akar kezdo
-                vagy, akar haladoszintu, nalunk megtalald a hozzad illo
+                Képzett oktatóink egyéni figyelmet szentelnek minden vendégnek,
+                hogy biztonságos és hatékony legyen az edzésed. Akár kezdő
+                vagy, akár haladó szintű, nálunk megtalálod a hozzád illő
                 programot.
               </p>
             </motion.div>
 
-            {/* Stats grid */}
+            {/* Stats */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.35, ease }}
-              className="mt-14 grid grid-cols-2 gap-8"
+              transition={{ duration: 0.6, delay: 0.3, ease }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-8 pt-10 border-t border-foreground/[0.06]"
             >
-              {stats.map((stat, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: 0.4 + i * 0.08, ease }}
-                  className="group"
-                >
-                  <span className="font-[family-name:var(--font-cormorant)] text-4xl font-light text-foreground group-hover:text-primary transition-colors duration-500">
+              {stats.map((stat) => (
+                <div key={stat.label}>
+                  <span className="font-[family-name:var(--font-playfair)] text-3xl md:text-4xl font-medium text-foreground">
                     {stat.number}
                   </span>
-                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/35 mt-2">
+                  <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/60 font-medium mt-2">
                     {stat.label}
                   </p>
-                </motion.div>
+                </div>
               ))}
             </motion.div>
           </div>
