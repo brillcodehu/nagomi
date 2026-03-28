@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, Space_Mono } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,10 +15,16 @@ const playfair = Playfair_Display({
   style: ["normal", "italic"],
 });
 
+const spaceMono = Space_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "Nagomi | Pilates Studio Budapest",
+  title: "Nagomi | Pilates Studio Debrecen",
   description:
-    "Premium reformer pilates studio Budapesten. Egyéni figyelem, kis csoportos órák, professzionális oktatók.",
+    "Premium reformer pilates studio Debrecenben. Egyéni figyelem, kis csoportos órák, professzionális oktatók.",
   keywords: [
     "pilates",
     "reformer pilates",
@@ -37,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="hu"
-      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col grain-overlay">{children}</body>
     </html>

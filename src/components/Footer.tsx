@@ -27,7 +27,7 @@ export default function Footer() {
               </span>
             </a>
             <p className="text-background/25 font-light max-w-sm leading-relaxed text-[14px]">
-              Premium pilates stúdió Budapesten. Fedezd fel a belső nyugalmadat
+              Premium pilates stúdió Debrecenben. Fedezd fel a belső nyugalmadat
               és találj rá az egyensúlyodra.
             </p>
           </div>

@@ -43,7 +43,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.3, ease }}
           className="text-[11px] tracking-[0.35em] uppercase font-medium text-background/60 mb-8"
         >
-          Premium Reformer Pilates Budapest
+          Premium Reformer Pilates Debrecen
         </motion.p>
 
         {/* Headline */}

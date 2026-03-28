@@ -8,7 +8,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
 const contactInfo = [
   {
     label: "Stúdió",
-    value: "Budapest, V. kerület\nBelvárosi utca 42., 1. emelet",
+    value: "Debrecen-Józsa\nDeák Ferenc utca 2.",
   },
   {
     label: "Email",
