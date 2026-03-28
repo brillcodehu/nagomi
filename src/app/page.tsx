@@ -3,7 +3,8 @@ import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
 import About from "@/components/About";
 import Classes from "@/components/Classes";
-import Schedule from "@/components/Schedule";
+import Schedule from "@/components/schedule/Schedule";
+import PricingSection from "@/components/schedule/PricingSection";
 import Testimonials from "@/components/Testimonials";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -23,6 +24,9 @@ export default function Home() {
       </ScrollReveal>
       <ScrollReveal type="fade-up">
         <Schedule />
+      </ScrollReveal>
+      <ScrollReveal type="fade-up">
+        <PricingSection />
       </ScrollReveal>
       <ScrollReveal type="clip-iris">
         <Testimonials />
