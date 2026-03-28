@@ -159,6 +159,7 @@ body {
 .split-line {
   display: block;
   overflow: hidden;
+  padding-block: 0.08em;
 }
 
 .split-line-inner {

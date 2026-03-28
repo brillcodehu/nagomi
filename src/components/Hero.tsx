@@ -45,6 +45,7 @@ export default function Hero() {
   const circleRef = useRef<HTMLDivElement>(null);
   const accentRef = useRef<HTMLDivElement>(null);
   const scrollIndicatorRef = useRef<HTMLDivElement>(null);
+  const horizCompRef = useRef<HTMLDivElement>(null);
 
   // Mouse-following glow (CSS custom properties, zero re-renders)
   const handleMouseMove = useCallback(
@@ -134,6 +135,21 @@ export default function Hero() {
             ease: "power3.out",
           }
         );
+      }
+
+      // Horizontal composition parallax on scroll
+      if (horizCompRef.current) {
+        gsap.to(horizCompRef.current, {
+          y: 40,
+          opacity: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "20% top",
+            end: "60% top",
+            scrub: 0.8,
+          },
+        });
       }
 
       // Scroll indicator fade out on scroll
@@ -350,7 +366,6 @@ export default function Hero() {
           }}
           className="absolute top-[75%] right-[25%] w-[4px] h-[4px] rounded-full bg-primary/20"
         />
-        {/* Extra depth-5 particle */}
         <motion.div
           animate={{
             y: [0, -30, 0],
@@ -385,7 +400,7 @@ export default function Hero() {
       {/* ═══ DEPTH 4: Main content ═══ */}
       <div
         ref={contentRef}
-        className="relative z-10 flex items-center h-full"
+        className="relative z-10 flex items-center h-full pt-20 md:pt-24"
       >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
@@ -560,6 +575,84 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {/* ═══ DEPTH 4: Horizontal composition bar (cinematic lower-third) ═══ */}
+      <div
+        ref={horizCompRef}
+        className="absolute bottom-[100px] left-0 right-0 z-10 pointer-events-none hidden md:block"
+        aria-hidden="true"
+      >
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2.8, duration: 1.2 }}
+            className="flex items-center gap-6"
+          >
+            {/* Left: location coordinates */}
+            <motion.span
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 3.0, duration: 0.8, ease }}
+              className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.25em] uppercase text-background/10 shrink-0"
+            >
+              47.5°N 21.6°E
+            </motion.span>
+
+            {/* Animated line */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 2.8, duration: 1.8, ease }}
+              className="flex-1 h-px bg-gradient-to-r from-background/[0.06] via-primary/[0.12] to-background/[0.02] origin-left"
+            />
+
+            {/* Right: decorative data points */}
+            <div className="flex items-center gap-5 shrink-0">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 3.2, duration: 0.8, ease }}
+                className="flex items-center gap-2"
+              >
+                <div className="w-1 h-1 rounded-full bg-primary/30" />
+                <span className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.2em] uppercase text-background/10">
+                  Est. 2018
+                </span>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 3.4, duration: 0.8, ease }}
+                className="flex items-center gap-2"
+              >
+                <div className="w-1 h-1 rounded-full bg-primary/30" />
+                <span className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.2em] uppercase text-background/10">
+                  6 fős csoportok
+                </span>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* ═══ DEPTH 4: Vertical side label ═══ */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 3.0, duration: 1.5 }}
+        className="absolute right-6 lg:right-16 top-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col items-center gap-4 pointer-events-none"
+        aria-hidden="true"
+      >
+        <div className="w-px h-12 bg-background/[0.04]" />
+        <span
+          className="font-[family-name:var(--font-mono)] text-[8px] tracking-[0.35em] uppercase text-background/8"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          Pilates Studio
+        </span>
+        <div className="w-px h-12 bg-background/[0.04]" />
+      </motion.div>
 
       {/* ═══ DEPTH 5: Scroll indicator ═══ */}
       <div
