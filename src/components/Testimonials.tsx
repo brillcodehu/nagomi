@@ -372,7 +372,7 @@ export default function Testimonials() {
             fontSize: "19.5vw",
             marginBottom: "-1.5%",
             color: "#2B2A20",
-            opacity: 0.15,
+            opacity: 0.75,
             fontWeight: 900,
             lineHeight: 0.85,
             letterSpacing: "-0.04em",
