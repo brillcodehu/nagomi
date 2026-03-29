@@ -18,13 +18,13 @@ export default function Footer() {
         <div className="flex items-center justify-between">
           <a
             href="mailto:talk@nagomi-pilates.hu"
-            className="text-[12px] text-background/15 hover:text-background/30 font-light tracking-wide transition-colors duration-400"
+            className="text-[12px] text-background/75 hover:text-background/90 font-light tracking-wide transition-colors duration-400"
           >
             talk@nagomi-pilates.hu
           </a>
           <a
             href="tel:+36304114071"
-            className="text-[12px] text-background/15 hover:text-background/30 font-light tracking-wide transition-colors duration-400"
+            className="text-[12px] text-background/75 hover:text-background/90 font-light tracking-wide transition-colors duration-400"
           >
             +36 30 411 4071
           </a>
