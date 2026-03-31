@@ -13,13 +13,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
-    // Check if already seeded
-    const existing = await db.select({ id: classTypes.id }).from(classTypes).limit(1);
-    if (existing.length > 0) {
-      return Response.json({ message: "Az adatbazis mar be van allitva." });
-    }
-
-    // Create tables
+    // Create tables first
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS class_types (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -130,6 +124,12 @@ export async function GET() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_scheduled_classes_date ON scheduled_classes(specific_date)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_customer_passes_email ON customer_passes(customer_email)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_customer_passes_active ON customer_passes(is_active, expires_at)`);
+
+    // Check if already seeded
+    const existing = await db.select({ id: classTypes.id }).from(classTypes).limit(1);
+    if (existing.length > 0) {
+      return Response.json({ message: "Az adatbazis mar be van allitva." });
+    }
 
     // Seed class types
     const [ct1, ct2, ct3, ct4] = await db.insert(classTypes).values([
