@@ -585,7 +585,7 @@ export default function Classes() {
         <div
           className="absolute left-[0%] top-[2%] w-[100%] h-[96%] lg:left-[5%] lg:w-[90%]"
           style={{
-            backgroundImage: "url(/pilateshero.png)",
+            backgroundImage: "url(/pilateshero.webp)",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center 30%",

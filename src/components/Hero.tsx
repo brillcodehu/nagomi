@@ -106,7 +106,7 @@ export default function Hero() {
         <div
           className="absolute left-[-5%] top-[10%] w-[110%] h-[80%] lg:left-[5%] lg:top-[12%] lg:w-[90%] lg:h-[88%]"
           style={{
-            backgroundImage: "url(/pilateshero.png)",
+            backgroundImage: "url(/pilateshero.webp)",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
@@ -131,7 +131,7 @@ export default function Hero() {
         <div
           className="absolute left-[-5%] top-[12%] w-[110%] h-[78%] lg:left-[8%] lg:top-[15%] lg:w-[84%] lg:h-[85%]"
           style={{
-            backgroundImage: "url(/pilateshero.png)",
+            backgroundImage: "url(/pilateshero.webp)",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",

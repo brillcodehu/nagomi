@@ -374,7 +374,7 @@ export default function About() {
         <div
           className="absolute left-[5%] top-[3%] w-[90%] h-[94%] lg:left-[15%] lg:w-[70%]"
           style={{
-            backgroundImage: "url(/pilateshero.png)",
+            backgroundImage: "url(/pilateshero.webp)",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
@@ -442,7 +442,7 @@ export default function About() {
                 style={{ clipPath: "inset(0 0 100% 0)" }}
               >
                 <Image
-                  src="/studioimg.png"
+                  src="/studioimg.webp"
                   alt="Nagomi Pilates Stúdió belső tere reformer gépekkel"
                   fill
                   className="object-cover"

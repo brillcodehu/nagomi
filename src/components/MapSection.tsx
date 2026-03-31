@@ -7,7 +7,7 @@ export default function MapSection() {
     <section className="relative w-full overflow-hidden bg-foreground">
       {/* The map image, full width */}
       <Image
-        src="/footerimage.png"
+        src="/footerimage.webp"
         alt="Nagomi Pilates Stúdió helyszíne a térképen"
         width={2198}
         height={1952}
