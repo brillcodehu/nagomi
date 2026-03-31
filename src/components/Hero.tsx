@@ -72,20 +72,10 @@ export default function Hero() {
     offset: ["start start", "end start"],
   });
 
-  // Parallax only on desktop
+  // Parallax only on desktop - reduced to 3 transforms
   const contentOpacity = useTransform(scrollYProgress, [0, 0.6], isDesktop ? [1, 0] : [1, 1]);
   const contentY = useTransform(scrollYProgress, [0, 0.6], isDesktop ? [0, 80] : [0, 0]);
   const circleY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -40] : [0, 0]);
-  const circleScale = useTransform(scrollYProgress, [0, 0.7], isDesktop ? [1, 0.85] : [1, 1]);
-
-  // Botanical parallax (desktop only)
-  const leaf1Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -60] : [0, 0]);
-  const leaf2Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, 40] : [0, 0]);
-  const leaf3Y = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -25] : [0, 0]);
-
-  // Pilates illustration parallax (desktop only)
-  const illustrationHazeY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -20] : [0, 0]);
-  const illustrationLineY = useTransform(scrollYProgress, [0, 1], isDesktop ? [0, -35] : [0, 0]);
 
   return (
     <section
@@ -105,13 +95,12 @@ export default function Hero() {
         }}
       />
 
-      {/* ═══ Pilates illustration: atmospheric haze (depth-0) ═══ */}
+      {/* ═══ Pilates illustration: atmospheric haze (no blur - opacity only) ═══ */}
       <motion.div
-        style={{ y: illustrationHazeY }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 3, delay: 0.5 }}
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none will-change-[opacity]"
         aria-hidden="true"
       >
         <div
@@ -121,9 +110,8 @@ export default function Hero() {
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
-            filter: "blur(45px) brightness(1.2) saturate(0.3)",
             mixBlendMode: "screen" as const,
-            opacity: 0.04,
+            opacity: 0.025,
             maskImage:
               "radial-gradient(ellipse 80% 70% at 50% 55%, black, transparent 70%)",
             WebkitMaskImage:
@@ -132,13 +120,12 @@ export default function Hero() {
         />
       </motion.div>
 
-      {/* ═══ Pilates illustration: line-art ghost (depth-1) ═══ */}
+      {/* ═══ Pilates illustration: line-art ghost ═══ */}
       <motion.div
-        style={{ y: illustrationLineY }}
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 3, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none will-change-[opacity,transform]"
         aria-hidden="true"
       >
         <div
@@ -176,7 +163,7 @@ export default function Hero() {
         </span>
       </div>
 
-      {/* ═══ Fine accent lines (CSS only, no animation on mobile) ═══ */}
+      {/* ═══ Fine accent lines (CSS only) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none overflow-hidden"
         aria-hidden="true"
@@ -186,85 +173,45 @@ export default function Hero() {
         <div className="absolute top-0 right-[33%] w-px h-full bg-gradient-to-b from-transparent via-background/[0.03] to-transparent hidden lg:block" />
       </div>
 
-      {/* ═══ Botanical elements (desktop only, 3D depth) ═══ */}
+      {/* ═══ Botanical elements (desktop only, CSS animations) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none hidden lg:block"
         aria-hidden="true"
-        style={{ perspective: "1200px" }}
       >
-        {/* Large monstera - right side, behind circle */}
+        {/* Large monstera - right side */}
         <motion.div
-          style={{ y: leaf1Y }}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 2, delay: 1.5, ease: "easeOut" }}
           className="absolute right-[2%] top-[8%] w-[340px] h-[340px] xl:w-[420px] xl:h-[420px]"
         >
-          <motion.div
-            animate={{
-              rotateY: [0, 8, 0, -5, 0],
-              rotateX: [0, -4, 0, 3, 0],
-              rotateZ: [0, 1.5, 0, -1, 0],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            style={{ transformStyle: "preserve-3d" }}
-          >
+          <div className="hero-botanical-sway w-full h-full">
             <MonsteraLeaf className="w-full h-full text-primary/[0.10] rotate-[-15deg]" />
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* Lotus - left side, lower */}
         <motion.div
-          style={{ y: leaf2Y }}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 2, delay: 2, ease: "easeOut" }}
           className="absolute left-[-2%] bottom-[10%] w-[200px] h-[200px] xl:w-[260px] xl:h-[260px]"
         >
-          <motion.div
-            animate={{
-              rotateY: [0, -6, 0, 4, 0],
-              rotateX: [0, 5, 0, -3, 0],
-              rotateZ: [0, -2, 0, 1.5, 0],
-            }}
-            transition={{
-              duration: 24,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 3,
-            }}
-            style={{ transformStyle: "preserve-3d" }}
-          >
+          <div className="hero-botanical-sway-reverse w-full h-full">
             <LotusFlower className="w-full h-full text-secondary/[0.08] rotate-[25deg]" />
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* Small leaf accent - top left area */}
         <motion.div
-          style={{ y: leaf3Y }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.5, delay: 2.5 }}
           className="absolute left-[15%] top-[18%] w-[60px] h-[60px] xl:w-[80px] xl:h-[80px]"
         >
-          <motion.div
-            animate={{
-              rotate: [0, 10, 0, -8, 0],
-              y: [0, -8, 0, 6, 0],
-            }}
-            transition={{
-              duration: 14,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1,
-            }}
-          >
+          <div className="hero-botanical-float w-full h-full">
             <SimpleLeaf className="w-full h-full text-primary/[0.12] rotate-[45deg]" />
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* Tiny leaf accent - bottom right */}
@@ -274,24 +221,13 @@ export default function Hero() {
           transition={{ duration: 1.5, delay: 3 }}
           className="absolute right-[20%] bottom-[22%] w-[40px] h-[40px]"
         >
-          <motion.div
-            animate={{
-              rotate: [0, -15, 0, 12, 0],
-              y: [0, 6, 0, -4, 0],
-            }}
-            transition={{
-              duration: 18,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 5,
-            }}
-          >
+          <div className="hero-botanical-float-reverse w-full h-full">
             <SimpleLeaf className="w-full h-full text-secondary/[0.10] rotate-[-30deg] scale-x-[-1]" />
-          </motion.div>
+          </div>
         </motion.div>
       </div>
 
-      {/* ═══ Mobile botanical (static, no animation) ═══ */}
+      {/* ═══ Mobile botanical (static) ═══ */}
       <div
         className="absolute inset-0 pointer-events-none lg:hidden"
         aria-hidden="true"
@@ -304,7 +240,7 @@ export default function Hero() {
       {/* ═══ Content ═══ */}
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-center lg:pb-0 pt-[100px] md:pt-[110px] lg:pt-[25vh]"
+        className="relative z-10 h-full flex items-end pb-[18vh] md:pb-[14vh] lg:items-center lg:pb-0 pt-[100px] md:pt-[110px] lg:pt-[25vh] will-change-[transform,opacity]"
       >
         <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-16">
           <div className="grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
@@ -391,8 +327,8 @@ export default function Hero() {
 
             {/* Rotating circular text */}
             <motion.div
-              style={{ y: circleY, scale: circleScale }}
-              className="hidden lg:flex items-center justify-center"
+              style={{ y: circleY }}
+              className="hidden lg:flex items-center justify-center will-change-transform"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.7, rotate: -30 }}
@@ -400,14 +336,7 @@ export default function Hero() {
                 transition={{ duration: 1.4, delay: 1.2, ease }}
                 className="relative"
               >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    duration: 28,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                >
+                <div className="hero-circle-spin">
                   <svg
                     viewBox="0 0 300 300"
                     className="w-[220px] h-[220px] xl:w-[280px] xl:h-[280px]"
@@ -433,25 +362,14 @@ export default function Hero() {
                       </textPath>
                     </text>
                   </svg>
-                </motion.div>
+                </div>
 
                 {/* Center crosshair + pulsing dot */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="relative w-7 h-7">
                     <div className="absolute top-1/2 left-0 w-full h-px bg-background/[0.06]" />
                     <div className="absolute top-0 left-1/2 w-px h-full bg-background/[0.06]" />
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.4, 1],
-                        opacity: [0.3, 0.6, 0.3],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[4px] h-[4px] rounded-full bg-primary/50"
-                    />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[4px] h-[4px] rounded-full bg-primary/50 hero-pulse" />
                   </div>
                 </div>
 

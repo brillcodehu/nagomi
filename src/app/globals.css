@@ -299,6 +299,71 @@ button:focus-visible.rounded-full {
 }
 
 /* ═══════════════════════════════════════
+   HERO CSS ANIMATIONS (GPU-optimized)
+   ═══════════════════════════════════════ */
+
+@keyframes hero-sway {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  33% { transform: rotate(2deg) translateY(-6px); }
+  66% { transform: rotate(-1.5deg) translateY(4px); }
+}
+
+@keyframes hero-sway-reverse {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  33% { transform: rotate(-2deg) translateY(5px); }
+  66% { transform: rotate(1.5deg) translateY(-4px); }
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(8deg) translateY(-8px); }
+}
+
+@keyframes hero-float-reverse {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(-10deg) translateY(5px); }
+}
+
+@keyframes hero-circle-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hero-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+  50% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.6; }
+}
+
+.hero-botanical-sway {
+  animation: hero-sway 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-botanical-sway-reverse {
+  animation: hero-sway-reverse 24s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-botanical-float {
+  animation: hero-float 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-botanical-float-reverse {
+  animation: hero-float-reverse 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-circle-spin {
+  animation: hero-circle-spin 28s linear infinite;
+  will-change: transform;
+}
+
+.hero-pulse {
+  animation: hero-pulse 3s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════
    REDUCED MOTION
    ═══════════════════════════════════════ */
 

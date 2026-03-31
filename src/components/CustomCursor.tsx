@@ -1,42 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import gsap from "gsap";
+import { useEffect, useRef } from "react";
 
 export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const posRef = useRef({ x: -100, y: -100 });
+  const ringPosRef = useRef({ x: -100, y: -100 });
   const visibleRef = useRef(false);
-
-  const onMove = useCallback((e: MouseEvent) => {
-    posRef.current = { x: e.clientX, y: e.clientY };
-
-    if (!visibleRef.current) {
-      visibleRef.current = true;
-      gsap.to(dotRef.current, { opacity: 1, duration: 0.3 });
-      gsap.to(ringRef.current, { opacity: 1, duration: 0.3 });
-    }
-
-    gsap.to(dotRef.current, {
-      x: e.clientX,
-      y: e.clientY,
-      duration: 0.08,
-      ease: "power2.out",
-    });
-    gsap.to(ringRef.current, {
-      x: e.clientX,
-      y: e.clientY,
-      duration: 0.35,
-      ease: "power2.out",
-    });
-  }, []);
-
-  const onLeave = useCallback(() => {
-    visibleRef.current = false;
-    gsap.to(dotRef.current, { opacity: 0, duration: 0.3 });
-    gsap.to(ringRef.current, { opacity: 0, duration: 0.3 });
-  }, []);
+  const rafRef = useRef<number>(0);
+  const isHoveringRef = useRef(false);
 
   useEffect(() => {
     // Desktop only
@@ -44,69 +17,81 @@ export default function CustomCursor() {
     if (window.innerWidth < 1024) return;
 
     document.documentElement.classList.add("has-custom-cursor");
+
+    const dot = dotRef.current;
+    const ring = ringRef.current;
+    if (!dot || !ring) return;
+
+    function onMove(e: MouseEvent) {
+      posRef.current = { x: e.clientX, y: e.clientY };
+
+      if (!visibleRef.current) {
+        visibleRef.current = true;
+        dot!.style.opacity = "1";
+        ring!.style.opacity = "1";
+      }
+
+      // Dot follows instantly via transform
+      dot!.style.transform = `translate(${e.clientX - 3}px, ${e.clientY - 3}px)`;
+    }
+
+    function onLeave() {
+      visibleRef.current = false;
+      dot!.style.opacity = "0";
+      ring!.style.opacity = "0";
+    }
+
+    // Ring follows with lerp in rAF
+    function tick() {
+      const dx = posRef.current.x - ringPosRef.current.x;
+      const dy = posRef.current.y - ringPosRef.current.y;
+      ringPosRef.current.x += dx * 0.15;
+      ringPosRef.current.y += dy * 0.15;
+
+      const scale = isHoveringRef.current ? 2.2 : 1;
+      ring!.style.transform = `translate(${ringPosRef.current.x - 18}px, ${ringPosRef.current.y - 18}px) scale(${scale})`;
+
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    // Hover delegation via event bubbling
+    function onPointerOver(e: PointerEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, [role='button'], .cursor-hover")) {
+        isHoveringRef.current = true;
+        dot!.style.transform = `translate(${posRef.current.x - 3}px, ${posRef.current.y - 3}px) scale(0)`;
+      }
+    }
+
+    function onPointerOut(e: PointerEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, [role='button'], .cursor-hover")) {
+        isHoveringRef.current = false;
+        dot!.style.transform = `translate(${posRef.current.x - 3}px, ${posRef.current.y - 3}px) scale(1)`;
+      }
+    }
+
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseleave", onLeave);
-
-    // Magnetic hover on interactive elements
-    const onEnterInteractive = () => {
-      gsap.to(ringRef.current, {
-        scale: 2.2,
-        borderColor: "rgba(154,131,99,0.25)",
-        duration: 0.4,
-        ease: "power2.out",
-      });
-      gsap.to(dotRef.current, { scale: 0, duration: 0.25 });
-    };
-
-    const onLeaveInteractive = () => {
-      gsap.to(ringRef.current, {
-        scale: 1,
-        borderColor: "rgba(154,131,99,0.35)",
-        duration: 0.4,
-        ease: "power2.out",
-      });
-      gsap.to(dotRef.current, { scale: 1, duration: 0.25 });
-    };
-
-    // Observe DOM for interactive elements (handles dynamically added ones)
-    const applyListeners = () => {
-      const elements = document.querySelectorAll(
-        'a, button, [role="button"], .cursor-hover'
-      );
-      elements.forEach((el) => {
-        el.addEventListener("mouseenter", onEnterInteractive);
-        el.addEventListener("mouseleave", onLeaveInteractive);
-      });
-      return elements;
-    };
-
-    const elements = applyListeners();
-
-    // Re-apply on DOM changes
-    const observer = new MutationObserver(() => {
-      applyListeners();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("pointerover", onPointerOver);
+    document.addEventListener("pointerout", onPointerOut);
+    rafRef.current = requestAnimationFrame(tick);
 
     return () => {
       document.documentElement.classList.remove("has-custom-cursor");
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseleave", onLeave);
-      elements.forEach((el) => {
-        el.removeEventListener("mouseenter", onEnterInteractive);
-        el.removeEventListener("mouseleave", onLeaveInteractive);
-      });
-      observer.disconnect();
+      document.removeEventListener("pointerover", onPointerOver);
+      document.removeEventListener("pointerout", onPointerOut);
+      cancelAnimationFrame(rafRef.current);
     };
-  }, [onMove, onLeave]);
+  }, []);
 
   return (
     <>
-      {/* Inner dot */}
       <div
         ref={dotRef}
         aria-hidden="true"
-        className="custom-cursor-dot"
         style={{
           position: "fixed",
           top: 0,
@@ -118,15 +103,14 @@ export default function CustomCursor() {
           pointerEvents: "none",
           zIndex: 99999,
           opacity: 0,
-          transform: "translate(-50%, -50%)",
           mixBlendMode: "difference",
+          willChange: "transform",
+          transition: "opacity 0.3s",
         }}
       />
-      {/* Outer ring */}
       <div
         ref={ringRef}
         aria-hidden="true"
-        className="custom-cursor-ring"
         style={{
           position: "fixed",
           top: 0,
@@ -138,7 +122,8 @@ export default function CustomCursor() {
           pointerEvents: "none",
           zIndex: 99998,
           opacity: 0,
-          transform: "translate(-50%, -50%)",
+          willChange: "transform",
+          transition: "opacity 0.3s",
         }}
       />
     </>
