@@ -10,9 +10,9 @@ export default function SmoothScroll({
   const lenisRef = useRef<InstanceType<typeof import("lenis").default> | null>(null);
 
   useEffect(() => {
-    // Delay initialization to avoid blocking first paint
-    const rIC = typeof requestIdleCallback === "function" ? requestIdleCallback : (cb: () => void) => setTimeout(cb, 1);
-    const timer = rIC(async () => {
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+
+    const init = async () => {
       const [{ default: Lenis }, { gsap }, { ScrollTrigger }] = await Promise.all([
         import("lenis"),
         import("gsap"),
@@ -32,11 +32,13 @@ export default function SmoothScroll({
       lenis.on("scroll", ScrollTrigger.update);
       gsap.ticker.add((time: number) => lenis.raf(time * 1000));
       gsap.ticker.lagSmoothing(0);
-    });
+    };
+
+    // Delay to avoid blocking first paint
+    timerId = setTimeout(init, 1);
 
     return () => {
-      const cIC = typeof cancelIdleCallback === "function" ? cancelIdleCallback : clearTimeout;
-      cIC(timer);
+      clearTimeout(timerId);
       lenisRef.current?.destroy();
       lenisRef.current = null;
     };
