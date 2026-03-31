@@ -11,7 +11,8 @@ export default function SmoothScroll({
 
   useEffect(() => {
     // Delay initialization to avoid blocking first paint
-    const timer = requestIdleCallback(async () => {
+    const rIC = typeof requestIdleCallback === "function" ? requestIdleCallback : (cb: () => void) => setTimeout(cb, 1);
+    const timer = rIC(async () => {
       const [{ default: Lenis }, { gsap }, { ScrollTrigger }] = await Promise.all([
         import("lenis"),
         import("gsap"),
@@ -34,7 +35,8 @@ export default function SmoothScroll({
     });
 
     return () => {
-      cancelIdleCallback(timer);
+      const cIC = typeof cancelIdleCallback === "function" ? cancelIdleCallback : clearTimeout;
+      cIC(timer);
       lenisRef.current?.destroy();
       lenisRef.current = null;
     };
