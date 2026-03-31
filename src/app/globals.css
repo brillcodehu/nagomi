@@ -299,8 +299,53 @@ button:focus-visible.rounded-full {
 }
 
 /* ═══════════════════════════════════════
-   HERO CSS ANIMATIONS (GPU-optimized)
+   HERO CSS ANIMATIONS (GPU-optimized, no JS blocking)
    ═══════════════════════════════════════ */
+
+/* Text reveal - visible IMMEDIATELY for LCP, then animates in */
+@keyframes hero-text-reveal {
+  from { transform: translateY(110%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes hero-content-reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hero-circle-entry {
+  from { opacity: 0; transform: scale(0.7) rotate(-30deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes hero-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hero-text-reveal {
+  animation: hero-text-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+.hero-text-reveal-2 {
+  animation: hero-text-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+}
+
+.hero-content-reveal {
+  animation: hero-content-reveal 0.8s ease 0.15s both;
+}
+
+.hero-circle-entry {
+  animation: hero-circle-entry 1.4s cubic-bezier(0.22, 1, 0.36, 1) 1s both;
+}
+
+.hero-fade-in {
+  animation: hero-fade-in 3s ease 0.5s both;
+}
+
+.hero-fade-in-delayed {
+  animation: hero-fade-in 2s ease 1.2s both;
+}
 
 @keyframes hero-sway {
   0%, 100% { transform: rotate(0deg) translateY(0); }
