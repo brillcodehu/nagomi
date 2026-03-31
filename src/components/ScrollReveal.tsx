@@ -1,10 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 type RevealType =
   | "clip-top"
@@ -32,102 +28,110 @@ export default function ScrollReveal({
     const el = ref.current;
     if (!el) return;
 
-    // Respect reduced motion
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      gsap.set(el, { clearProps: "all" });
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    let animation: gsap.core.Tween;
+    let cleanup: (() => void) | undefined;
 
-    switch (type) {
-      case "clip-top":
-        gsap.set(el, { clipPath: "inset(0 0 100% 0)" });
-        animation = gsap.to(el, {
-          clipPath: "inset(0 0 0% 0)",
-          duration: 1.2,
-          delay,
-          ease: "power3.inOut",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            end: "top 30%",
-            toggleActions: "play none none none",
-          },
-        });
-        break;
+    (async () => {
+      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+      ]);
+      gsap.registerPlugin(ScrollTrigger);
 
-      case "clip-iris":
-        gsap.set(el, {
-          clipPath: "inset(40% 30% 40% 30% round 16px)",
-        });
-        animation = gsap.to(el, {
-          clipPath: "inset(0% 0% 0% 0% round 0px)",
-          duration: 1.4,
-          delay,
-          ease: "power3.inOut",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 80%",
-            end: "top 20%",
-            scrub: 1,
-          },
-        });
-        break;
+      let animation: gsap.core.Tween;
 
-      case "clip-circle":
-        gsap.set(el, { clipPath: "circle(0% at 50% 50%)" });
-        animation = gsap.to(el, {
-          clipPath: "circle(80% at 50% 50%)",
-          duration: 1.6,
-          delay,
-          ease: "power2.inOut",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 80%",
-            end: "top 20%",
-            scrub: 1.5,
-          },
-        });
-        break;
+      switch (type) {
+        case "clip-top":
+          gsap.set(el, { clipPath: "inset(0 0 100% 0)" });
+          animation = gsap.to(el, {
+            clipPath: "inset(0 0 0% 0)",
+            duration: 1.2,
+            delay,
+            ease: "power3.inOut",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              end: "top 30%",
+              toggleActions: "play none none none",
+            },
+          });
+          break;
 
-      case "curtain":
-        gsap.set(el, { clipPath: "inset(100% 0 0 0)" });
-        animation = gsap.to(el, {
-          clipPath: "inset(0% 0 0 0)",
-          duration: 1,
-          delay,
-          ease: "power3.inOut",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        });
-        break;
+        case "clip-iris":
+          gsap.set(el, {
+            clipPath: "inset(40% 30% 40% 30% round 16px)",
+          });
+          animation = gsap.to(el, {
+            clipPath: "inset(0% 0% 0% 0% round 0px)",
+            duration: 1.4,
+            delay,
+            ease: "power3.inOut",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 80%",
+              end: "top 20%",
+              scrub: 1,
+            },
+          });
+          break;
 
-      case "fade-up":
-      default:
-        gsap.set(el, { y: 60, opacity: 0 });
-        animation = gsap.to(el, {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          delay,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        });
-        break;
-    }
+        case "clip-circle":
+          gsap.set(el, { clipPath: "circle(0% at 50% 50%)" });
+          animation = gsap.to(el, {
+            clipPath: "circle(80% at 50% 50%)",
+            duration: 1.6,
+            delay,
+            ease: "power2.inOut",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 80%",
+              end: "top 20%",
+              scrub: 1.5,
+            },
+          });
+          break;
 
-    return () => {
-      animation?.scrollTrigger?.kill();
-      animation?.kill();
-    };
+        case "curtain":
+          gsap.set(el, { clipPath: "inset(100% 0 0 0)" });
+          animation = gsap.to(el, {
+            clipPath: "inset(0% 0 0 0)",
+            duration: 1,
+            delay,
+            ease: "power3.inOut",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              toggleActions: "play none none none",
+            },
+          });
+          break;
+
+        case "fade-up":
+        default:
+          gsap.set(el, { y: 60, opacity: 0 });
+          animation = gsap.to(el, {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            delay,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              toggleActions: "play none none none",
+            },
+          });
+          break;
+      }
+
+      cleanup = () => {
+        animation?.scrollTrigger?.kill();
+        animation?.kill();
+      };
+    })();
+
+    return () => cleanup?.();
   }, [type, delay]);
 
   return (
