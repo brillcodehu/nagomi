@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { instructors } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import SessionProvider from "@/components/admin/SessionProvider";
 
 export const metadata = {
   title: "Admin | Nagomi Pilates",
@@ -11,36 +15,30 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
 
-  // Ha nincs bejelentkezve: a middleware mar a login oldalra iranyitotta,
-  // igy a children a login page. Rendereljuk sidebar nelkul.
-  if (!user) {
-    return <>{children}</>;
+  if (!session?.user?.id) {
+    return <SessionProvider>{children}</SessionProvider>;
   }
 
-  // Ellenorizzuk, hogy az user egy instructor-e
-  const { data: instructor } = await supabase
-    .from("instructors")
-    .select("id, name")
-    .eq("auth_user_id", user.id)
-    .single<{ id: string; name: string }>();
+  const [instructor] = await db
+    .select({ id: instructors.id, name: instructors.name })
+    .from(instructors)
+    .where(eq(instructors.id, session.user.id))
+    .limit(1);
 
-  // Ha be van jelentkezve de nem instructor: kijelentkeztetjuk
   if (!instructor) {
-    await supabase.auth.signOut();
     redirect("/admin/login");
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar instructorName={instructor.name} />
-      <main className="lg:pl-64 pt-[57px] lg:pt-0">
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
-      </main>
-    </div>
+    <SessionProvider>
+      <div className="min-h-screen bg-background">
+        <AdminSidebar instructorName={instructor.name} />
+        <main className="lg:pl-64 pt-[57px] lg:pt-0">
+          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        </main>
+      </div>
+    </SessionProvider>
   );
 }

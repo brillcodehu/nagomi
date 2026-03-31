@@ -1,24 +1,28 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { instructors } from "@/lib/db/schema";
+import { eq, asc } from "drizzle-orm";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("instructors")
-    .select("id, name, email, bio, avatar_url, is_active, created_at")
-    .eq("is_active", true)
-    .order("name") as { data: { id: string; name: string; email: string; bio: string | null; avatar_url: string | null; is_active: boolean; created_at: string }[] | null; error: { message: string } | null };
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  const data = await db
+    .select({
+      id: instructors.id,
+      name: instructors.name,
+      email: instructors.email,
+      bio: instructors.bio,
+      avatar_url: instructors.avatarUrl,
+      is_active: instructors.isActive,
+      created_at: instructors.createdAt,
+    })
+    .from(instructors)
+    .where(eq(instructors.isActive, true))
+    .orderBy(asc(instructors.name));
 
   return NextResponse.json(data);
 }

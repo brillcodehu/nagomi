@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 
 interface ClassTypeOption {
@@ -66,22 +65,15 @@ export default function AdminSchedulePage() {
   const [saving, setSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const supabase = createClient();
-
     const [classesRes, classTypesRes, instructorsRes] = await Promise.all([
-      supabase
-        .from("scheduled_classes")
-        .select("id, class_type_id, instructor_id, day_of_week, start_time, max_spots_override, is_cancelled, notes, class_types(name, max_capacity), instructors(name)")
-        .eq("is_cancelled", false)
-        .order("day_of_week")
-        .order("start_time") as unknown as Promise<{ data: ScheduledClassRow[] | null }>,
-      supabase.from("class_types").select("id, name, max_capacity").order("sort_order") as unknown as Promise<{ data: ClassTypeOption[] | null }>,
-      supabase.from("instructors").select("id, name").eq("is_active", true).order("name") as unknown as Promise<{ data: InstructorOption[] | null }>,
+      fetch("/api/admin/classes").then((r) => r.json()),
+      fetch("/api/admin/class-types").then((r) => r.json()),
+      fetch("/api/admin/instructors").then((r) => r.json()),
     ]);
 
-    setClasses(classesRes.data ?? []);
-    setClassTypes(classTypesRes.data ?? []);
-    setInstructors(instructorsRes.data ?? []);
+    setClasses(classesRes ?? []);
+    setClassTypes(classTypesRes ?? []);
+    setInstructors(instructorsRes ?? []);
     setLoading(false);
   }, []);
 
@@ -176,7 +168,6 @@ export default function AdminSchedulePage() {
     }
   }
 
-  // Csoportositas nap szerint
   const grouped = (classes ?? []).reduce(
     (acc, cls) => {
       const dow = cls.day_of_week ?? 0;
@@ -210,7 +201,6 @@ export default function AdminSchedulePage() {
         </button>
       </div>
 
-      {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 px-4">
           <div className="bg-card border border-border rounded-lg w-full max-w-md p-6 shadow-lg">
@@ -347,7 +337,6 @@ export default function AdminSchedulePage() {
         </div>
       )}
 
-      {/* Orak napok szerint */}
       {Object.keys(grouped).length === 0 ? (
         <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
           Meg nincsenek orak beallitva.

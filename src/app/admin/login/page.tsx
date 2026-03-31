@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
@@ -16,13 +16,13 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const result = await signIn("credentials", {
       email,
       password,
+      redirect: false,
     });
 
-    if (error) {
+    if (result?.error) {
       setError("Hibas email cim vagy jelszo. Probald ujra.");
       setLoading(false);
       return;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Calendar,
@@ -35,8 +35,7 @@ export default function AdminSidebar({ instructorName }: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOut({ redirect: false });
     router.push("/admin/login");
     router.refresh();
   }
@@ -97,7 +96,6 @@ export default function AdminSidebar({ instructorName }: AdminSidebarProps) {
 
   return (
     <>
-      {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
         <h2 className="font-serif text-lg font-semibold text-foreground">
           Nagomi Admin
@@ -110,7 +108,6 @@ export default function AdminSidebar({ instructorName }: AdminSidebarProps) {
         </button>
       </div>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-30 bg-foreground/20"
@@ -118,7 +115,6 @@ export default function AdminSidebar({ instructorName }: AdminSidebarProps) {
         />
       )}
 
-      {/* Mobile sidebar */}
       <div
         className={`lg:hidden fixed top-[57px] left-0 bottom-0 z-30 w-64 bg-card border-r border-border flex flex-col transition-transform ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
@@ -127,7 +123,6 @@ export default function AdminSidebar({ instructorName }: AdminSidebarProps) {
         {sidebarContent}
       </div>
 
-      {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-card border-r border-border">
         {sidebarContent}
       </div>

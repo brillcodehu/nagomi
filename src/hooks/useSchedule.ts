@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 
 /* ═══════════════════════════════════════
-   Types (matching future Supabase API shape)
+   Types
    ═══════════════════════════════════════ */
 
 export interface ScheduleSlot {

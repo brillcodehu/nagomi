@@ -1,33 +1,26 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { passTypes } from "@/lib/db/schema";
+import { asc } from "drizzle-orm";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("pass_types")
-    .select("*")
-    .order("sort_order") as { data: Record<string, unknown>[] | null; error: { message: string } | null };
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  const data = await db
+    .select()
+    .from(passTypes)
+    .orderBy(asc(passTypes.sortOrder));
 
   return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -42,23 +35,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("pass_types")
-    .insert({
+  const [inserted] = await db
+    .insert(passTypes)
+    .values({
       name,
       occasions,
-      price_huf,
-      valid_days: valid_days ?? 30,
+      priceHuf: price_huf,
+      validDays: valid_days ?? 30,
       description: description ?? null,
-      is_active: is_active ?? true,
-      sort_order: sort_order ?? 0,
-    } as never)
-    .select()
-    .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+      isActive: is_active ?? true,
+      sortOrder: sort_order ?? 0,
+    })
+    .returning();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(inserted, { status: 201 });
 }

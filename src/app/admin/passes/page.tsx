@@ -66,16 +66,11 @@ export default function AdminPassesPage() {
   }, []);
 
   const fetchCustomerPasses = useCallback(async () => {
-    // Customer passes-t a Supabase client-tel kerjuk
-    const { createClient } = await import("@/lib/supabase/client");
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("customer_passes")
-      .select(
-        "id, customer_name, customer_email, customer_phone, remaining_occasions, purchased_at, expires_at, is_active, pass_types(name, occasions)"
-      )
-      .order("purchased_at", { ascending: false }) as { data: CustomerPassRow[] | null };
-    setCustomerPasses(data ?? []);
+    const res = await fetch("/api/admin/customer-passes");
+    if (res.ok) {
+      const data = await res.json();
+      setCustomerPasses(data ?? []);
+    }
   }, []);
 
   useEffect(() => {

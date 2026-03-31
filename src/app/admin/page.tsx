@@ -1,17 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import {
+  scheduledClasses,
+  classTypes,
+  instructors,
+  bookings,
+  customerPasses,
+} from "@/lib/db/schema";
+import { eq, and, inArray, gte, lte, gt, desc, sql } from "drizzle-orm";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { hu } from "date-fns/locale";
 import Link from "next/link";
-
-const DAY_NAMES: Record<number, string> = {
-  1: "Hetfo",
-  2: "Kedd",
-  3: "Szerda",
-  4: "Csutortok",
-  5: "Pentek",
-  6: "Szombat",
-  7: "Vasarnap",
-};
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -28,68 +26,102 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
   const todayDow = today.getDay() === 0 ? 7 : today.getDay();
   const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
   const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
-  // Mai orak a foglalasok szamaval
-  const { data: todayClasses } = await supabase
-    .from("scheduled_classes")
-    .select("id, start_time, max_spots_override, class_types(name, max_capacity, price_huf), instructors(name)")
-    .eq("day_of_week", todayDow)
-    .eq("is_cancelled", false)
-    .order("start_time") as { data: { id: string; start_time: string; max_spots_override: number | null; class_types: { name: string; max_capacity: number; price_huf: number } | null; instructors: { name: string } | null }[] | null };
+  // Mai orak
+  const todayClasses = await db
+    .select({
+      id: scheduledClasses.id,
+      startTime: scheduledClasses.startTime,
+      maxSpotsOverride: scheduledClasses.maxSpotsOverride,
+      ctName: classTypes.name,
+      ctMaxCapacity: classTypes.maxCapacity,
+      instName: instructors.name,
+    })
+    .from(scheduledClasses)
+    .innerJoin(classTypes, eq(scheduledClasses.classTypeId, classTypes.id))
+    .innerJoin(instructors, eq(scheduledClasses.instructorId, instructors.id))
+    .where(
+      and(
+        eq(scheduledClasses.dayOfWeek, todayDow),
+        eq(scheduledClasses.isCancelled, false)
+      )
+    )
+    .orderBy(scheduledClasses.startTime);
 
-  // Mai foglalas szamok ora szerint
-  const { data: todayBookings } = await supabase
-    .from("bookings")
-    .select("id, scheduled_class_id, status, amount_huf")
-    .eq("class_date", todayStr)
-    .in("status", ["pending", "confirmed"]) as { data: { id: string; scheduled_class_id: string; status: string; amount_huf: number | null }[] | null };
+  // Mai foglalasok
+  const todayBookings = await db
+    .select({
+      id: bookings.id,
+      scheduledClassId: bookings.scheduledClassId,
+      amountHuf: bookings.amountHuf,
+    })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.classDate, todayStr),
+        inArray(bookings.status, ["pending", "confirmed"])
+      )
+    );
 
-  // Heti osszes foglalas es bevetel
-  const { data: weekBookings } = await supabase
-    .from("bookings")
-    .select("id, status, amount_huf")
-    .gte("class_date", weekStart)
-    .lte("class_date", weekEnd)
-    .in("status", ["pending", "confirmed"]) as { data: { id: string; status: string; amount_huf: number | null }[] | null };
+  // Heti foglalasok
+  const weekBookings = await db
+    .select({ id: bookings.id, amountHuf: bookings.amountHuf })
+    .from(bookings)
+    .where(
+      and(
+        gte(bookings.classDate, weekStart),
+        lte(bookings.classDate, weekEnd),
+        inArray(bookings.status, ["pending", "confirmed"])
+      )
+    );
 
   // Utolso 10 foglalas
-  const { data: recentBookings } = await supabase
-    .from("bookings")
-    .select("id, customer_name, customer_email, status, payment_type, class_date, created_at, amount_huf, scheduled_classes(start_time, class_types(name))")
-    .order("created_at", { ascending: false })
-    .limit(10) as { data: { id: string; customer_name: string; customer_email: string; status: string; payment_type: string | null; class_date: string; created_at: string; amount_huf: number | null; scheduled_classes: { start_time: string; class_types: { name: string } | null } | null }[] | null };
+  const recentBookings = await db
+    .select({
+      id: bookings.id,
+      customerName: bookings.customerName,
+      status: bookings.status,
+      classDate: bookings.classDate,
+      amountHuf: bookings.amountHuf,
+      startTime: scheduledClasses.startTime,
+      ctName: classTypes.name,
+    })
+    .from(bookings)
+    .leftJoin(scheduledClasses, eq(bookings.scheduledClassId, scheduledClasses.id))
+    .leftJoin(classTypes, eq(scheduledClasses.classTypeId, classTypes.id))
+    .orderBy(desc(bookings.createdAt))
+    .limit(10);
 
-  // Aktiv berletek szama
-  const { count: activePassesCount } = await supabase
-    .from("customer_passes")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true)
-    .gt("remaining_occasions", 0)
-    .gt("expires_at", new Date().toISOString());
+  // Aktiv berletek
+  const [activePassesResult] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(customerPasses)
+    .where(
+      and(
+        eq(customerPasses.isActive, true),
+        gt(customerPasses.remainingOccasions, 0),
+        gt(customerPasses.expiresAt, new Date())
+      )
+    );
 
-  // Statisztikak szamolasa
-  const weeklyBookingCount = weekBookings?.length ?? 0;
-  const weeklyRevenue = weekBookings?.reduce((sum, b) => sum + (b.amount_huf ?? 0), 0) ?? 0;
+  const weeklyBookingCount = weekBookings.length;
+  const weeklyRevenue = weekBookings.reduce((sum, b) => sum + (b.amountHuf ?? 0), 0);
 
-  // Mai orak booking count-tal
-  const todayClassesWithCounts = (todayClasses ?? []).map((cls) => {
-    const classType = cls.class_types as { name: string; max_capacity: number; price_huf: number } | null;
-    const instructor = cls.instructors as { name: string } | null;
-    const bookingCount = (todayBookings ?? []).filter(
-      (b) => b.scheduled_class_id === cls.id
+  const todayClassesWithCounts = todayClasses.map((cls) => {
+    const bookingCount = todayBookings.filter(
+      (b) => b.scheduledClassId === cls.id
     ).length;
-    const maxSpots = cls.max_spots_override ?? classType?.max_capacity ?? 0;
+    const maxSpots = cls.maxSpotsOverride ?? cls.ctMaxCapacity;
     return {
       id: cls.id,
-      time: cls.start_time?.slice(0, 5),
-      name: classType?.name ?? "Ismeretlen",
-      instructor: instructor?.name ?? "N/A",
+      time: cls.startTime?.slice(0, 5),
+      name: cls.ctName,
+      instructor: cls.instName,
       bookingCount,
       maxSpots,
     };
@@ -106,27 +138,16 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Statisztika kartyak */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Mai orak"
-          value={todayClassesWithCounts.length}
-        />
-        <StatCard
-          label="Heti foglalasok"
-          value={weeklyBookingCount}
-        />
+        <StatCard label="Mai orak" value={todayClassesWithCounts.length} />
+        <StatCard label="Heti foglalasok" value={weeklyBookingCount} />
         <StatCard
           label="Heti bevetel"
           value={`${weeklyRevenue.toLocaleString("hu-HU")} Ft`}
         />
-        <StatCard
-          label="Aktiv berletek"
-          value={activePassesCount ?? 0}
-        />
+        <StatCard label="Aktiv berletek" value={activePassesResult?.count ?? 0} />
       </div>
 
-      {/* Mai orak */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-lg font-semibold text-foreground">
@@ -194,7 +215,6 @@ export default async function AdminDashboardPage() {
         )}
       </section>
 
-      {/* Legutobbi foglalasok */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-lg font-semibold text-foreground">
@@ -208,7 +228,7 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
 
-        {!recentBookings || recentBookings.length === 0 ? (
+        {recentBookings.length === 0 ? (
           <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">
             Meg nincsenek foglalasok.
           </div>
@@ -235,36 +255,34 @@ export default async function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {recentBookings.map((booking) => {
-                  const sc = booking.scheduled_classes as { start_time: string; class_types: { name: string } | null } | null;
-                  return (
-                    <tr key={booking.id}>
-                      <td className="px-4 py-3 text-sm text-foreground">
-                        {booking.customer_name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">
-                        {sc?.class_types?.name ?? "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {booking.class_date}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            STATUS_STYLES[booking.status] ?? "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {STATUS_LABELS[booking.status] ?? booking.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
-                        {booking.amount_huf
-                          ? `${booking.amount_huf.toLocaleString("hu-HU")} Ft`
-                          : "-"}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {recentBookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td className="px-4 py-3 text-sm text-foreground">
+                      {booking.customerName}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">
+                      {booking.ctName ?? "-"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {booking.classDate}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                          STATUS_STYLES[booking.status] ??
+                          "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {STATUS_LABELS[booking.status] ?? booking.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
+                      {booking.amountHuf
+                        ? `${booking.amountHuf.toLocaleString("hu-HU")} Ft`
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

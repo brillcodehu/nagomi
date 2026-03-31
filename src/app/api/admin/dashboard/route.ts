@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import {
+  scheduledClasses,
+  bookings,
+  customerPasses,
+} from "@/lib/db/schema";
+import { eq, and, inArray, gte, lte, gt, sql } from "drizzle-orm";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -22,42 +26,54 @@ export async function GET() {
 
   const [todayClassesRes, todayBookingsRes, weekBookingsRes, activePassesRes] =
     await Promise.all([
-      // Mai orak szama
-      supabase
-        .from("scheduled_classes")
-        .select("id", { count: "exact", head: true })
-        .eq("day_of_week", todayDow)
-        .eq("is_cancelled", false),
-      // Mai foglalasok szama
-      supabase
-        .from("bookings")
-        .select("id", { count: "exact", head: true })
-        .eq("class_date", todayStr)
-        .in("status", ["pending", "confirmed"]),
-      // Heti foglalasok es bevetel
-      supabase
-        .from("bookings")
-        .select("id, amount_huf")
-        .gte("class_date", weekStart)
-        .lte("class_date", weekEnd)
-        .in("status", ["pending", "confirmed"]) as unknown as Promise<{ data: { id: string; amount_huf: number | null }[] | null; error: unknown }>,
-      // Aktiv berletek szama
-      supabase
-        .from("customer_passes")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true)
-        .gt("remaining_occasions", 0)
-        .gt("expires_at", new Date().toISOString()),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(scheduledClasses)
+        .where(
+          and(
+            eq(scheduledClasses.dayOfWeek, todayDow),
+            eq(scheduledClasses.isCancelled, false)
+          )
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.classDate, todayStr),
+            inArray(bookings.status, ["pending", "confirmed"])
+          )
+        ),
+      db
+        .select({ id: bookings.id, amountHuf: bookings.amountHuf })
+        .from(bookings)
+        .where(
+          and(
+            gte(bookings.classDate, weekStart),
+            lte(bookings.classDate, weekEnd),
+            inArray(bookings.status, ["pending", "confirmed"])
+          )
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(customerPasses)
+        .where(
+          and(
+            eq(customerPasses.isActive, true),
+            gt(customerPasses.remainingOccasions, 0),
+            gt(customerPasses.expiresAt, new Date())
+          )
+        ),
     ]);
 
   const weeklyRevenue =
-    weekBookingsRes.data?.reduce((sum, b) => sum + (b.amount_huf ?? 0), 0) ?? 0;
+    weekBookingsRes.reduce((sum, b) => sum + (b.amountHuf ?? 0), 0);
 
   return NextResponse.json({
-    today_classes: todayClassesRes.count ?? 0,
-    today_bookings: todayBookingsRes.count ?? 0,
-    weekly_bookings: weekBookingsRes.data?.length ?? 0,
+    today_classes: todayClassesRes[0]?.count ?? 0,
+    today_bookings: todayBookingsRes[0]?.count ?? 0,
+    weekly_bookings: weekBookingsRes.length,
     weekly_revenue: weeklyRevenue,
-    active_passes: activePassesRes.count ?? 0,
+    active_passes: activePassesRes[0]?.count ?? 0,
   });
 }

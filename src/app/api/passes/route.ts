@@ -1,15 +1,12 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { passTypes } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { createPassCheckoutSession } from "@/lib/stripe/helpers";
 import { passPurchaseSchema } from "@/lib/utils/validators";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-/**
- * POST /api/passes
- *
- * Purchase a pass via Stripe Checkout.
- */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -25,17 +22,13 @@ export async function POST(request: Request) {
     const { passTypeId, customerName, customerEmail, customerPhone } =
       parsed.data;
 
-    const supabase = await createAdminClient();
+    const [passType] = await db
+      .select()
+      .from(passTypes)
+      .where(and(eq(passTypes.id, passTypeId), eq(passTypes.isActive, true)))
+      .limit(1);
 
-    // Fetch pass type details
-    const { data: passType, error: passTypeError } = await supabase
-      .from("pass_types")
-      .select("*")
-      .eq("id", passTypeId)
-      .eq("is_active", true)
-      .single() as { data: { id: string; name: string; occasions: number; price_huf: number; valid_days: number; description: string | null; is_active: boolean; sort_order: number } | null; error: { message: string } | null };
-
-    if (passTypeError || !passType) {
+    if (!passType) {
       return Response.json(
         { error: "A berlettipus nem talalhato vagy nem aktiv" },
         { status: 404 }
@@ -49,7 +42,7 @@ export async function POST(request: Request) {
     const session = await createPassCheckoutSession({
       passTypeName: passType.name,
       occasions: passType.occasions,
-      priceHuf: passType.price_huf,
+      priceHuf: passType.priceHuf,
       customerEmail,
       customerName,
       customerPhone,
@@ -60,9 +53,6 @@ export async function POST(request: Request) {
     return Response.json({ checkoutUrl: session.url });
   } catch (error) {
     console.error("Pass purchase API error:", error);
-    return Response.json(
-      { error: "Szerverhiba tortent" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Szerverhiba tortent" }, { status: 500 });
   }
 }

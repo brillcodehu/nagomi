@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { bookings } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -27,21 +27,19 @@ export async function PUT(
 
   const updateData: Record<string, unknown> = { status };
 
-  // Ha lemondas, rogzitjuk az idopontot
   if (status === "cancelled") {
-    updateData.cancelled_at = new Date().toISOString();
+    updateData.cancelledAt = new Date();
   }
 
-  const { data, error } = await supabase
-    .from("bookings")
-    .update(updateData as never)
-    .eq("id", id)
-    .select()
-    .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+  const [updated] = await db
+    .update(bookings)
+    .set(updateData)
+    .where(eq(bookings.id, id))
+    .returning();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!updated) {
+    return NextResponse.json({ error: "Nem talalhato" }, { status: 404 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(updated);
 }

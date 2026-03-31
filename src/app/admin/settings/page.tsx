@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 
@@ -14,43 +14,35 @@ interface InstructorProfile {
 }
 
 export default function AdminSettingsPage() {
+  const { data: session, status } = useSession();
   const [profile, setProfile] = useState<InstructorProfile | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
+    if (status === "loading") return;
+    if (!session) {
+      router.push("/admin/login");
+      return;
+    }
+
     async function loadProfile() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/admin/login");
-        return;
-      }
-
-      setUserEmail(user.email ?? null);
-
-      const { data: instructor } = await supabase
-        .from("instructors")
-        .select("name, email, bio, avatar_url, is_active")
-        .eq("auth_user_id", user.id)
-        .single() as { data: InstructorProfile | null };
-
-      if (instructor) {
-        setProfile(instructor);
+      const res = await fetch("/api/admin/instructors");
+      if (res.ok) {
+        const data = await res.json();
+        const me = data.find(
+          (i: InstructorProfile & { id: string }) => i.email === session?.user?.email
+        );
+        if (me) setProfile(me);
       }
       setLoading(false);
     }
 
     loadProfile();
-  }, [router]);
+  }, [session, status, router]);
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOut({ redirect: false });
     router.push("/admin/login");
     router.refresh();
   }
@@ -69,7 +61,6 @@ export default function AdminSettingsPage() {
         Beallitasok
       </h1>
 
-      {/* Profil informaciok */}
       <section className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -79,9 +70,7 @@ export default function AdminSettingsPage() {
             <h2 className="font-serif text-lg font-semibold text-foreground">
               Profil
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Oktato adatok
-            </p>
+            <p className="text-sm text-muted-foreground">Oktato adatok</p>
           </div>
         </div>
 
@@ -92,28 +81,20 @@ export default function AdminSettingsPage() {
                 Nev
               </p>
               <p className="text-sm text-foreground font-medium">
-                {profile?.name ?? "-"}
+                {profile?.name ?? session?.user?.name ?? "-"}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                Oktato email
+                Email
               </p>
               <p className="text-sm text-foreground">
-                {profile?.email ?? "-"}
+                {profile?.email ?? session?.user?.email ?? "-"}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                Auth email
-              </p>
-              <p className="text-sm text-foreground">
-                {userEmail ?? "-"}
-              </p>
-            </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                 Statusz
@@ -141,7 +122,6 @@ export default function AdminSettingsPage() {
         </div>
       </section>
 
-      {/* Kijelentkezes */}
       <section className="bg-card border border-border rounded-lg p-6">
         <h2 className="font-serif text-lg font-semibold text-foreground mb-2">
           Kijelentkezes

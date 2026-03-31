@@ -1,13 +1,10 @@
 import { type NextRequest } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { scheduledClasses, classTypes, instructors, bookings } from "@/lib/db/schema";
+import { eq, and, inArray, gte, lte, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/schedule?weekStart=2026-03-30&classType=reformer&instructor=uuid
- *
- * Returns the weekly schedule with booking counts for each class slot.
- */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -24,152 +21,115 @@ export async function GET(request: NextRequest) {
 
     const weekStartDate = new Date(weekStart + "T00:00:00");
     if (isNaN(weekStartDate.getTime())) {
-      return Response.json(
-        { error: "Ervenytelen datum" },
-        { status: 400 }
-      );
+      return Response.json({ error: "Ervenytelen datum" }, { status: 400 });
     }
 
-    // Calculate week end (7 days)
     const weekEndDate = new Date(weekStartDate);
     weekEndDate.setDate(weekEndDate.getDate() + 6);
     const weekEnd = weekEndDate.toISOString().split("T")[0];
 
-    // Build days of week mapping: each date in the week and its ISO day (1=Monday..7=Sunday)
     const daysInWeek: Array<{ date: string; dayOfWeek: number }> = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStartDate);
       d.setDate(d.getDate() + i);
       const isoString = d.toISOString().split("T")[0];
-      // getDay() returns 0=Sunday, convert to ISO 1=Monday..7=Sunday
       const jsDay = d.getDay();
       const isoDay = jsDay === 0 ? 7 : jsDay;
       daysInWeek.push({ date: isoString, dayOfWeek: isoDay });
     }
 
-    const supabase = await createAdminClient();
-
-    // Fetch all active scheduled classes with joins
-    let query = supabase
-      .from("scheduled_classes")
-      .select(
-        `
-        id,
-        day_of_week,
-        start_time,
-        specific_date,
-        max_spots_override,
-        is_cancelled,
-        class_types!inner (
-          id,
-          name,
-          slug,
-          tagline,
-          duration_min,
-          max_capacity,
-          price_huf,
-          difficulty,
-          is_private
-        ),
-        instructors!inner (
-          id,
-          name,
-          avatar_url
-        )
-      `
-      )
-      .eq("is_cancelled", false);
-
-    if (classTypeSlug) {
-      query = query.eq("class_types.slug", classTypeSlug);
-    }
-
+    // Build conditions
+    const conditions = [eq(scheduledClasses.isCancelled, false)];
     if (instructorId) {
-      query = query.eq("instructor_id", instructorId);
+      conditions.push(eq(scheduledClasses.instructorId, instructorId));
+    }
+    if (classTypeSlug) {
+      conditions.push(eq(classTypes.slug, classTypeSlug));
     }
 
-    const { data: scheduledClasses, error: classError } = await query as { data: { id: string; day_of_week: number | null; start_time: string; specific_date: string | null; max_spots_override: number | null; is_cancelled: boolean; class_types: { id: string; name: string; slug: string; tagline: string | null; duration_min: number; max_capacity: number; price_huf: number; difficulty: number; is_private: boolean }; instructors: { id: string; name: string; avatar_url: string | null } }[] | null; error: { message: string } | null };
+    const rows = await db
+      .select({
+        id: scheduledClasses.id,
+        dayOfWeek: scheduledClasses.dayOfWeek,
+        startTime: scheduledClasses.startTime,
+        specificDate: scheduledClasses.specificDate,
+        maxSpotsOverride: scheduledClasses.maxSpotsOverride,
+        ctName: classTypes.name,
+        ctSlug: classTypes.slug,
+        ctTagline: classTypes.tagline,
+        ctDurationMin: classTypes.durationMin,
+        ctMaxCapacity: classTypes.maxCapacity,
+        ctPriceHuf: classTypes.priceHuf,
+        ctDifficulty: classTypes.difficulty,
+        ctIsPrivate: classTypes.isPrivate,
+        instName: instructors.name,
+        instAvatar: instructors.avatarUrl,
+      })
+      .from(scheduledClasses)
+      .innerJoin(classTypes, eq(scheduledClasses.classTypeId, classTypes.id))
+      .innerJoin(instructors, eq(scheduledClasses.instructorId, instructors.id))
+      .where(and(...conditions));
 
-    if (classError) {
-      console.error("Schedule query error:", classError);
-      return Response.json(
-        { error: "Nem sikerult lekerni az orarendet" },
-        { status: 500 }
-      );
-    }
-
-    if (!scheduledClasses || scheduledClasses.length === 0) {
+    if (rows.length === 0) {
       return Response.json({ schedule: [] });
     }
 
-    // Expand recurring and specific-date classes into concrete slots for the week
-    type ScheduleSlot = {
+    type SlotData = {
       scheduledClassId: string;
       classDate: string;
-      classType: {
-        name: string;
-        slug: string;
-        tagline: string | null;
-        duration_min: number;
-        max_capacity: number;
-        price_huf: number;
-        difficulty: number;
-        is_private: boolean;
-      };
-      instructor: {
-        name: string;
-        avatar_url: string | null;
-      };
       startTime: string;
       maxSpots: number;
+      ctName: string;
+      ctSlug: string;
+      ctTagline: string | null;
+      ctDurationMin: number;
+      ctPriceHuf: number;
+      ctDifficulty: number | null;
+      ctIsPrivate: boolean | null;
+      instName: string;
+      instAvatar: string | null;
     };
 
-    const slots: ScheduleSlot[] = [];
+    const slots: SlotData[] = [];
 
-    for (const sc of scheduledClasses) {
-      // Type narrowing for joined data
-      const ct = sc.class_types as unknown as {
-        id: string;
-        name: string;
-        slug: string;
-        tagline: string | null;
-        duration_min: number;
-        max_capacity: number;
-        price_huf: number;
-        difficulty: number;
-        is_private: boolean;
-      };
-      const inst = sc.instructors as unknown as {
-        id: string;
-        name: string;
-        avatar_url: string | null;
-      };
+    for (const sc of rows) {
+      const maxSpots = sc.maxSpotsOverride ?? sc.ctMaxCapacity;
 
-      const maxSpots = sc.max_spots_override ?? ct.max_capacity;
-
-      if (sc.specific_date) {
-        // Specific date class: only include if within the week
-        if (sc.specific_date >= weekStart && sc.specific_date <= weekEnd) {
+      if (sc.specificDate) {
+        if (sc.specificDate >= weekStart && sc.specificDate <= weekEnd) {
           slots.push({
             scheduledClassId: sc.id,
-            classDate: sc.specific_date,
-            classType: ct,
-            instructor: inst,
-            startTime: sc.start_time.slice(0, 5), // HH:MM
+            classDate: sc.specificDate,
+            startTime: sc.startTime.slice(0, 5),
             maxSpots,
+            ctName: sc.ctName,
+            ctSlug: sc.ctSlug,
+            ctTagline: sc.ctTagline,
+            ctDurationMin: sc.ctDurationMin,
+            ctPriceHuf: sc.ctPriceHuf,
+            ctDifficulty: sc.ctDifficulty,
+            ctIsPrivate: sc.ctIsPrivate,
+            instName: sc.instName,
+            instAvatar: sc.instAvatar,
           });
         }
-      } else if (sc.day_of_week !== null) {
-        // Recurring class: find matching day(s) in the week
+      } else if (sc.dayOfWeek !== null) {
         for (const day of daysInWeek) {
-          if (day.dayOfWeek === sc.day_of_week) {
+          if (day.dayOfWeek === sc.dayOfWeek) {
             slots.push({
               scheduledClassId: sc.id,
               classDate: day.date,
-              classType: ct,
-              instructor: inst,
-              startTime: sc.start_time.slice(0, 5),
+              startTime: sc.startTime.slice(0, 5),
               maxSpots,
+              ctName: sc.ctName,
+              ctSlug: sc.ctSlug,
+              ctTagline: sc.ctTagline,
+              ctDurationMin: sc.ctDurationMin,
+              ctPriceHuf: sc.ctPriceHuf,
+              ctDifficulty: sc.ctDifficulty,
+              ctIsPrivate: sc.ctIsPrivate,
+              instName: sc.instName,
+              instAvatar: sc.instAvatar,
             });
           }
         }
@@ -180,30 +140,28 @@ export async function GET(request: NextRequest) {
       return Response.json({ schedule: [] });
     }
 
-    // Fetch booking counts for all relevant (scheduledClassId, classDate) pairs
-    const { data: bookings, error: bookingError } = await supabase
-      .from("bookings")
-      .select("scheduled_class_id, class_date")
-      .in("status", ["pending", "confirmed"])
-      .gte("class_date", weekStart)
-      .lte("class_date", weekEnd) as { data: { scheduled_class_id: string; class_date: string }[] | null; error: { message: string } | null };
+    // Booking counts
+    const bookingRows = await db
+      .select({
+        scheduledClassId: bookings.scheduledClassId,
+        classDate: bookings.classDate,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(bookings)
+      .where(
+        and(
+          inArray(bookings.status, ["pending", "confirmed"]),
+          gte(bookings.classDate, weekStart),
+          lte(bookings.classDate, weekEnd)
+        )
+      )
+      .groupBy(bookings.scheduledClassId, bookings.classDate);
 
-    if (bookingError) {
-      console.error("Booking count query error:", bookingError);
-      return Response.json(
-        { error: "Nem sikerult lekerni a foglalasokat" },
-        { status: 500 }
-      );
-    }
-
-    // Build a count map: "scheduledClassId:classDate" -> count
     const countMap = new Map<string, number>();
-    for (const b of bookings ?? []) {
-      const key = `${b.scheduled_class_id}:${b.class_date}`;
-      countMap.set(key, (countMap.get(key) ?? 0) + 1);
+    for (const b of bookingRows) {
+      countMap.set(`${b.scheduledClassId}:${b.classDate}`, b.count);
     }
 
-    // Assemble response
     const schedule = slots
       .map((slot) => {
         const bookedSpots =
@@ -211,23 +169,22 @@ export async function GET(request: NextRequest) {
         return {
           id: slot.scheduledClassId,
           classDate: slot.classDate,
-          className: slot.classType.name,
-          classSlug: slot.classType.slug,
-          classTagline: slot.classType.tagline,
+          className: slot.ctName,
+          classSlug: slot.ctSlug,
+          classTagline: slot.ctTagline,
           startTime: slot.startTime,
-          durationMin: slot.classType.duration_min,
-          priceHuf: slot.classType.price_huf,
-          difficulty: slot.classType.difficulty,
-          isPrivate: slot.classType.is_private,
-          instructorName: slot.instructor.name,
-          instructorAvatar: slot.instructor.avatar_url,
+          durationMin: slot.ctDurationMin,
+          priceHuf: slot.ctPriceHuf,
+          difficulty: slot.ctDifficulty,
+          isPrivate: slot.ctIsPrivate,
+          instructorName: slot.instName,
+          instructorAvatar: slot.instAvatar,
           maxSpots: slot.maxSpots,
           bookedSpots,
           availableSpots: Math.max(0, slot.maxSpots - bookedSpots),
         };
       })
       .sort((a, b) => {
-        // Sort by date then by time
         const dateCompare = a.classDate.localeCompare(b.classDate);
         if (dateCompare !== 0) return dateCompare;
         return a.startTime.localeCompare(b.startTime);
@@ -236,9 +193,6 @@ export async function GET(request: NextRequest) {
     return Response.json({ schedule });
   } catch (error) {
     console.error("Schedule API error:", error);
-    return Response.json(
-      { error: "Szerverhiba tortent" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Szerverhiba tortent" }, { status: 500 });
   }
 }

@@ -1,37 +1,64 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { scheduledClasses, classTypes, instructors } from "@/lib/db/schema";
+import { eq, asc } from "drizzle-orm";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("scheduled_classes")
-    .select(
-      "id, class_type_id, instructor_id, day_of_week, start_time, max_spots_override, is_cancelled, notes, specific_date, created_at, class_types(name, max_capacity), instructors(name)"
-    )
-    .eq("is_cancelled", false)
-    .order("day_of_week")
-    .order("start_time") as { data: { id: string; class_type_id: string; instructor_id: string; day_of_week: number | null; start_time: string; max_spots_override: number | null; is_cancelled: boolean; notes: string | null; specific_date: string | null; created_at: string; class_types: { name: string; max_capacity: number } | null; instructors: { name: string } | null }[] | null; error: { message: string } | null };
+  const rows = await db
+    .select({
+      id: scheduledClasses.id,
+      class_type_id: scheduledClasses.classTypeId,
+      instructor_id: scheduledClasses.instructorId,
+      day_of_week: scheduledClasses.dayOfWeek,
+      start_time: scheduledClasses.startTime,
+      max_spots_override: scheduledClasses.maxSpotsOverride,
+      is_cancelled: scheduledClasses.isCancelled,
+      notes: scheduledClasses.notes,
+      specific_date: scheduledClasses.specificDate,
+      created_at: scheduledClasses.createdAt,
+      ct_name: classTypes.name,
+      ct_max_capacity: classTypes.maxCapacity,
+      inst_name: instructors.name,
+    })
+    .from(scheduledClasses)
+    .leftJoin(classTypes, eq(scheduledClasses.classTypeId, classTypes.id))
+    .leftJoin(instructors, eq(scheduledClasses.instructorId, instructors.id))
+    .where(eq(scheduledClasses.isCancelled, false))
+    .orderBy(
+      asc(scheduledClasses.dayOfWeek),
+      asc(scheduledClasses.startTime)
+    );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  // Transform to match expected frontend format
+  const data = rows.map((r) => ({
+    id: r.id,
+    class_type_id: r.class_type_id,
+    instructor_id: r.instructor_id,
+    day_of_week: r.day_of_week,
+    start_time: r.start_time,
+    max_spots_override: r.max_spots_override,
+    is_cancelled: r.is_cancelled,
+    notes: r.notes,
+    specific_date: r.specific_date,
+    created_at: r.created_at,
+    class_types: r.ct_name
+      ? { name: r.ct_name, max_capacity: r.ct_max_capacity }
+      : null,
+    instructors: r.inst_name ? { name: r.inst_name } : null,
+  }));
 
   return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -46,21 +73,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("scheduled_classes")
-    .insert({
-      class_type_id,
-      instructor_id,
-      day_of_week: day_of_week ?? null,
-      start_time,
-      max_spots_override: max_spots_override ?? null,
-    } as never)
-    .select()
-    .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+  const [inserted] = await db
+    .insert(scheduledClasses)
+    .values({
+      classTypeId: class_type_id,
+      instructorId: instructor_id,
+      dayOfWeek: day_of_week ?? null,
+      startTime: start_time,
+      maxSpotsOverride: max_spots_override ?? null,
+    })
+    .returning();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(inserted, { status: 201 });
 }

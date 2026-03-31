@@ -1,4 +1,6 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { bookings, customerPasses } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { stripe } from "@/lib/stripe/client";
 import { z } from "zod";
 
@@ -9,11 +11,6 @@ const cancelSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
-/**
- * POST /api/bookings/cancel
- *
- * Cancel a booking. Handles Stripe refunds and pass occasion restoration.
- */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -27,23 +24,20 @@ export async function POST(request: Request) {
     }
 
     const { bookingId, reason } = parsed.data;
-    const supabase = await createAdminClient();
 
-    // Fetch the booking
-    const { data: booking, error: fetchError } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("id", bookingId)
-      .single() as { data: { id: string; status: string; payment_type: string; stripe_payment_intent_id: string | null; pass_id: string | null; [key: string]: unknown } | null; error: { message: string } | null };
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
 
-    if (fetchError || !booking) {
+    if (!booking) {
       return Response.json(
         { error: "A foglalas nem talalhato" },
         { status: 404 }
       );
     }
 
-    // Only pending or confirmed bookings can be cancelled
     if (booking.status !== "pending" && booking.status !== "confirmed") {
       return Response.json(
         {
@@ -54,15 +48,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Handle Stripe refund if it was a Stripe payment with a completed checkout
+    // Stripe refund
     if (
-      booking.payment_type === "stripe" &&
-      booking.stripe_payment_intent_id &&
+      booking.paymentType === "stripe" &&
+      booking.stripePaymentIntentId &&
       booking.status === "confirmed"
     ) {
       try {
         await stripe.refunds.create({
-          payment_intent: booking.stripe_payment_intent_id,
+          payment_intent: booking.stripePaymentIntentId,
         });
       } catch (refundError) {
         console.error("Stripe refund error:", refundError);
@@ -76,48 +70,29 @@ export async function POST(request: Request) {
       }
     }
 
-    // If it was a pass payment, restore the occasion
-    if (booking.payment_type === "pass" && booking.pass_id) {
-      const { data: pass, error: passError } = await supabase
-        .from("customer_passes")
-        .select("id, remaining_occasions")
-        .eq("id", booking.pass_id)
-        .single() as { data: { id: string; remaining_occasions: number } | null; error: { message: string } | null };
-
-      if (!passError && pass) {
-        await supabase
-          .from("customer_passes")
-          .update({
-            remaining_occasions: pass.remaining_occasions + 1,
-          } as never)
-          .eq("id", pass.id);
-      }
+    // Restore pass occasion
+    if (booking.paymentType === "pass" && booking.passId) {
+      await db
+        .update(customerPasses)
+        .set({
+          remainingOccasions: sql`${customerPasses.remainingOccasions} + 1`,
+        })
+        .where(eq(customerPasses.id, booking.passId));
     }
 
-    // Update booking status to cancelled
-    const { error: updateError } = await supabase
-      .from("bookings")
-      .update({
+    // Cancel booking
+    await db
+      .update(bookings)
+      .set({
         status: "cancelled",
-        cancelled_at: new Date().toISOString(),
-        cancellation_reason: reason ?? null,
-      } as never)
-      .eq("id", bookingId) as { error: { message: string } | null };
-
-    if (updateError) {
-      console.error("Booking cancel update error:", updateError);
-      return Response.json(
-        { error: "Nem sikerult lemondani a foglalast" },
-        { status: 500 }
-      );
-    }
+        cancelledAt: new Date(),
+        cancellationReason: reason ?? null,
+      })
+      .where(eq(bookings.id, bookingId));
 
     return Response.json({ success: true });
   } catch (error) {
     console.error("Booking cancel API error:", error);
-    return Response.json(
-      { error: "Szerverhiba tortent" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Szerverhiba tortent" }, { status: 500 });
   }
 }

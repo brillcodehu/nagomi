@@ -1,33 +1,26 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { classTypes } from "@/lib/db/schema";
+import { asc } from "drizzle-orm";
 
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("class_types")
-    .select("*")
-    .order("sort_order") as { data: Record<string, unknown>[] | null; error: { message: string } | null };
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  const data = await db
+    .select()
+    .from(classTypes)
+    .orderBy(asc(classTypes.sortOrder));
 
   return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -52,26 +45,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("class_types")
-    .insert({
+  const [inserted] = await db
+    .insert(classTypes)
+    .values({
       name,
       slug,
       description: description ?? null,
       tagline: tagline ?? null,
-      duration_min: duration_min ?? 55,
-      max_capacity: max_capacity ?? 6,
-      price_huf,
+      durationMin: duration_min ?? 55,
+      maxCapacity: max_capacity ?? 6,
+      priceHuf: price_huf,
       difficulty: difficulty ?? 1,
-      is_private: is_private ?? false,
-      sort_order: sort_order ?? 0,
-    } as never)
-    .select()
-    .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+      isPrivate: is_private ?? false,
+      sortOrder: sort_order ?? 0,
+    })
+    .returning();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(inserted, { status: 201 });
 }

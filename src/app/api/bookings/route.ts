@@ -1,17 +1,18 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import {
+  scheduledClasses,
+  classTypes,
+  instructors,
+  bookings,
+  customerPasses,
+} from "@/lib/db/schema";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { createClassCheckoutSession } from "@/lib/stripe/helpers";
 import { bookingFormSchema } from "@/lib/utils/validators";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-/**
- * POST /api/bookings
- *
- * Create a new booking. Supports two payment types:
- * - "stripe": creates a pending booking + Stripe Checkout session
- * - "pass": validates an existing pass and books immediately
- */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -34,74 +35,51 @@ export async function POST(request: Request) {
       passId,
     } = parsed.data;
 
-    const supabase = await createAdminClient();
+    // Fetch class details
+    const [scRow] = await db
+      .select({
+        id: scheduledClasses.id,
+        startTime: scheduledClasses.startTime,
+        maxSpotsOverride: scheduledClasses.maxSpotsOverride,
+        isCancelled: scheduledClasses.isCancelled,
+        ctName: classTypes.name,
+        ctSlug: classTypes.slug,
+        ctPriceHuf: classTypes.priceHuf,
+        ctMaxCapacity: classTypes.maxCapacity,
+        instName: instructors.name,
+      })
+      .from(scheduledClasses)
+      .innerJoin(classTypes, eq(scheduledClasses.classTypeId, classTypes.id))
+      .innerJoin(instructors, eq(scheduledClasses.instructorId, instructors.id))
+      .where(eq(scheduledClasses.id, scheduledClassId))
+      .limit(1);
 
-    // Fetch class details for checkout session and validation
-    const { data: scheduledClass, error: classError } = await supabase
-      .from("scheduled_classes")
-      .select(
-        `
-        id,
-        start_time,
-        max_spots_override,
-        is_cancelled,
-        class_types (
-          name,
-          slug,
-          price_huf,
-          max_capacity
-        ),
-        instructors (
-          name
-        )
-      `
-      )
-      .eq("id", scheduledClassId)
-      .single() as { data: { id: string; start_time: string; max_spots_override: number | null; is_cancelled: boolean; class_types: { name: string; slug: string; price_huf: number; max_capacity: number } | null; instructors: { name: string } | null } | null; error: { message: string } | null };
-
-    if (classError || !scheduledClass) {
-      return Response.json(
-        { error: "Az ora nem talalhato" },
-        { status: 404 }
-      );
+    if (!scRow) {
+      return Response.json({ error: "Az ora nem talalhato" }, { status: 404 });
     }
 
-    if (scheduledClass.is_cancelled) {
+    if (scRow.isCancelled) {
       return Response.json(
         { error: "Ez az ora torolve lett" },
         { status: 400 }
       );
     }
 
-    const classType = scheduledClass.class_types as unknown as {
-      name: string;
-      slug: string;
-      price_huf: number;
-      max_capacity: number;
-    };
-    const instructor = scheduledClass.instructors as unknown as {
-      name: string;
-    };
-    const maxSpots =
-      scheduledClass.max_spots_override ?? classType.max_capacity;
+    const maxSpots = scRow.maxSpotsOverride ?? scRow.ctMaxCapacity;
 
     // Check available spots
-    const { count: bookedCount, error: countError } = await supabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .eq("scheduled_class_id", scheduledClassId)
-      .eq("class_date", classDate)
-      .in("status", ["pending", "confirmed"]);
-
-    if (countError) {
-      console.error("Booking count error:", countError);
-      return Response.json(
-        { error: "Nem sikerult ellenorizni a szabad helyeket" },
-        { status: 500 }
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.scheduledClassId, scheduledClassId),
+          eq(bookings.classDate, classDate),
+          inArray(bookings.status, ["pending", "confirmed"])
+        )
       );
-    }
 
-    if ((bookedCount ?? 0) >= maxSpots) {
+    if ((countResult?.count ?? 0) >= maxSpots) {
       return Response.json(
         { error: "CLASS_FULL", message: "Nincs tobb szabad hely" },
         { status: 409 }
@@ -110,25 +88,25 @@ export async function POST(request: Request) {
 
     // ----- STRIPE PAYMENT -----
     if (paymentType === "stripe") {
-      // Create booking via RPC with 'pending' status
-      const { data: bookingId, error: bookError } = await supabase.rpc(
-        "book_class" as never,
-        {
-          p_scheduled_class_id: scheduledClassId,
-          p_class_date: classDate,
-          p_customer_name: customerName,
-          p_customer_email: customerEmail,
-          p_customer_phone: customerPhone,
-          p_payment_type: "stripe",
-          p_amount_huf: classType.price_huf,
-        } as never
-      );
-
-      if (bookError) {
-        console.error("book_class RPC error:", bookError);
-
-        // Handle unique constraint violation (duplicate booking)
-        if (bookError.code === "23505") {
+      let bookingId: string;
+      try {
+        const [inserted] = await db
+          .insert(bookings)
+          .values({
+            scheduledClassId,
+            classDate,
+            customerName,
+            customerEmail,
+            customerPhone,
+            status: "pending",
+            paymentType: "stripe",
+            amountHuf: scRow.ctPriceHuf,
+          })
+          .returning({ id: bookings.id });
+        bookingId = inserted.id;
+      } catch (err: unknown) {
+        const pgErr = err as { code?: string; message?: string };
+        if (pgErr.code === "23505") {
           return Response.json(
             {
               error: "DUPLICATE_BOOKING",
@@ -137,42 +115,32 @@ export async function POST(request: Request) {
             { status: 409 }
           );
         }
-
-        // Handle CLASS_FULL from the DB function
-        if (bookError.message?.includes("CLASS_FULL")) {
-          return Response.json(
-            { error: "CLASS_FULL", message: "Nincs tobb szabad hely" },
-            { status: 409 }
-          );
-        }
-
+        console.error("Booking insert error:", err);
         return Response.json(
           { error: "Nem sikerult letrehozni a foglalast" },
           { status: 500 }
         );
       }
 
-      // Create Stripe Checkout session
       const headersList = await headers();
       const origin =
         headersList.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
       const session = await createClassCheckoutSession({
-        bookingId: bookingId as string,
-        className: classType.name,
+        bookingId,
+        className: scRow.ctName,
         classDate,
-        startTime: scheduledClass.start_time.slice(0, 5),
-        instructorName: instructor.name,
-        priceHuf: classType.price_huf,
+        startTime: scRow.startTime.slice(0, 5),
+        instructorName: scRow.instName,
+        priceHuf: scRow.ctPriceHuf,
         customerEmail,
         origin,
       });
 
-      // Save checkout session ID on the booking
-      await supabase
-        .from("bookings")
-        .update({ stripe_checkout_session_id: session.id } as never)
-        .eq("id", bookingId as string);
+      await db
+        .update(bookings)
+        .set({ stripeCheckoutSessionId: session.id })
+        .where(eq(bookings.id, bookingId));
 
       return Response.json({ checkoutUrl: session.url });
     }
@@ -186,28 +154,27 @@ export async function POST(request: Request) {
         );
       }
 
-      // Validate the pass
-      const { data: pass, error: passError } = await supabase
-        .from("customer_passes")
-        .select("id, remaining_occasions, expires_at, is_active, customer_email")
-        .eq("id", passId)
-        .single() as { data: { id: string; remaining_occasions: number; expires_at: string; is_active: boolean; customer_email: string } | null; error: { message: string } | null };
+      const [pass] = await db
+        .select()
+        .from(customerPasses)
+        .where(eq(customerPasses.id, passId))
+        .limit(1);
 
-      if (passError || !pass) {
+      if (!pass) {
         return Response.json(
           { error: "PASS_INVALID", message: "A berlet nem talalhato" },
           { status: 404 }
         );
       }
 
-      if (!pass.is_active) {
+      if (!pass.isActive) {
         return Response.json(
           { error: "PASS_INVALID", message: "A berlet inaktiv" },
           { status: 400 }
         );
       }
 
-      if (pass.remaining_occasions <= 0) {
+      if (pass.remainingOccasions <= 0) {
         return Response.json(
           {
             error: "PASS_INVALID",
@@ -217,16 +184,14 @@ export async function POST(request: Request) {
         );
       }
 
-      const now = new Date().toISOString();
-      if (pass.expires_at < now) {
+      if (pass.expiresAt < new Date()) {
         return Response.json(
           { error: "PASS_INVALID", message: "A berlet lejart" },
           { status: 400 }
         );
       }
 
-      // Verify pass belongs to the customer
-      if (pass.customer_email !== customerEmail) {
+      if (pass.customerEmail !== customerEmail) {
         return Response.json(
           {
             error: "PASS_INVALID",
@@ -236,24 +201,25 @@ export async function POST(request: Request) {
         );
       }
 
-      // Create booking via RPC with pass
-      const { data: bookingId, error: bookError } = await supabase.rpc(
-        "book_class" as never,
-        {
-          p_scheduled_class_id: scheduledClassId,
-          p_class_date: classDate,
-          p_customer_name: customerName,
-          p_customer_email: customerEmail,
-          p_customer_phone: customerPhone,
-          p_payment_type: "pass",
-          p_pass_id: passId,
-        } as never
-      );
-
-      if (bookError) {
-        console.error("book_class RPC error (pass):", bookError);
-
-        if (bookError.code === "23505") {
+      let bookingId: string;
+      try {
+        const [inserted] = await db
+          .insert(bookings)
+          .values({
+            scheduledClassId,
+            classDate,
+            customerName,
+            customerEmail,
+            customerPhone,
+            status: "confirmed",
+            paymentType: "pass",
+            passId,
+          })
+          .returning({ id: bookings.id });
+        bookingId = inserted.id;
+      } catch (err: unknown) {
+        const pgErr = err as { code?: string; message?: string };
+        if (pgErr.code === "23505") {
           return Response.json(
             {
               error: "DUPLICATE_BOOKING",
@@ -262,21 +228,7 @@ export async function POST(request: Request) {
             { status: 409 }
           );
         }
-
-        if (bookError.message?.includes("CLASS_FULL")) {
-          return Response.json(
-            { error: "CLASS_FULL", message: "Nincs tobb szabad hely" },
-            { status: 409 }
-          );
-        }
-
-        if (bookError.message?.includes("PASS_INVALID")) {
-          return Response.json(
-            { error: "PASS_INVALID", message: "A berlet nem hasznalhato" },
-            { status: 400 }
-          );
-        }
-
+        console.error("Booking insert error (pass):", err);
         return Response.json(
           { error: "Nem sikerult letrehozni a foglalast" },
           { status: 500 }
@@ -284,17 +236,12 @@ export async function POST(request: Request) {
       }
 
       // Decrement pass occasions
-      await supabase
-        .from("customer_passes")
-        .update({
-          remaining_occasions: pass.remaining_occasions - 1,
-        } as never)
-        .eq("id", passId);
+      await db
+        .update(customerPasses)
+        .set({ remainingOccasions: sql`${customerPasses.remainingOccasions} - 1` })
+        .where(eq(customerPasses.id, passId));
 
-      return Response.json({
-        success: true,
-        bookingId: bookingId as string,
-      });
+      return Response.json({ success: true, bookingId });
     }
 
     return Response.json(
@@ -303,9 +250,6 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Bookings API error:", error);
-    return Response.json(
-      { error: "Szerverhiba tortent" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Szerverhiba tortent" }, { status: 500 });
   }
 }

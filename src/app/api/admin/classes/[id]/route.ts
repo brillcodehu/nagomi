@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { scheduledClasses } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -18,49 +18,41 @@ export async function PUT(
   const { class_type_id, instructor_id, day_of_week, start_time, max_spots_override } =
     body;
 
-  const { data, error } = await supabase
-    .from("scheduled_classes")
-    .update({
-      class_type_id,
-      instructor_id,
-      day_of_week: day_of_week ?? null,
-      start_time,
-      max_spots_override: max_spots_override ?? null,
-    } as never)
-    .eq("id", id)
-    .select()
-    .single() as { data: Record<string, unknown> | null; error: { message: string } | null };
+  const [updated] = await db
+    .update(scheduledClasses)
+    .set({
+      classTypeId: class_type_id,
+      instructorId: instructor_id,
+      dayOfWeek: day_of_week ?? null,
+      startTime: start_time,
+      maxSpotsOverride: max_spots_override ?? null,
+    })
+    .where(eq(scheduledClasses.id, id))
+    .returning();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!updated) {
+    return NextResponse.json({ error: "Nem talalhato" }, { status: 404 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
-  // Soft delete: is_cancelled = true
-  const { error } = await supabase
-    .from("scheduled_classes")
-    .update({ is_cancelled: true } as never)
-    .eq("id", id) as { error: { message: string } | null };
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  // Soft delete
+  await db
+    .update(scheduledClasses)
+    .set({ isCancelled: true })
+    .where(eq(scheduledClasses.id, id));
 
   return NextResponse.json({ success: true });
 }

@@ -1,13 +1,10 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { customerPasses, passTypes } from "@/lib/db/schema";
+import { eq, and, gt } from "drizzle-orm";
 import { passCheckSchema } from "@/lib/utils/validators";
 
 export const dynamic = "force-dynamic";
 
-/**
- * POST /api/passes/check
- *
- * Check if a customer has active, non-expired passes by email.
- */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -21,51 +18,35 @@ export async function POST(request: Request) {
     }
 
     const { email } = parsed.data;
-    const supabase = await createAdminClient();
 
-    const now = new Date().toISOString();
-
-    const { data: passes, error } = await supabase
-      .from("customer_passes")
-      .select(
-        `
-        id,
-        remaining_occasions,
-        expires_at,
-        pass_types (
-          name
+    const passes = await db
+      .select({
+        id: customerPasses.id,
+        remainingOccasions: customerPasses.remainingOccasions,
+        expiresAt: customerPasses.expiresAt,
+        passTypeName: passTypes.name,
+      })
+      .from(customerPasses)
+      .innerJoin(passTypes, eq(customerPasses.passTypeId, passTypes.id))
+      .where(
+        and(
+          eq(customerPasses.customerEmail, email),
+          eq(customerPasses.isActive, true),
+          gt(customerPasses.remainingOccasions, 0),
+          gt(customerPasses.expiresAt, new Date())
         )
-      `
-      )
-      .eq("customer_email", email)
-      .eq("is_active", true)
-      .gt("remaining_occasions", 0)
-      .gt("expires_at", now) as { data: { id: string; remaining_occasions: number; expires_at: string; pass_types: { name: string } | null }[] | null; error: { message: string } | null };
-
-    if (error) {
-      console.error("Pass check query error:", error);
-      return Response.json(
-        { error: "Nem sikerult lekerni a berleteket" },
-        { status: 500 }
       );
-    }
 
-    const result = (passes ?? []).map((pass) => {
-      const passType = pass.pass_types as unknown as { name: string };
-      return {
-        id: pass.id,
-        passTypeName: passType.name,
-        remainingOccasions: pass.remaining_occasions,
-        expiresAt: pass.expires_at,
-      };
-    });
+    const result = passes.map((pass) => ({
+      id: pass.id,
+      passTypeName: pass.passTypeName,
+      remainingOccasions: pass.remainingOccasions,
+      expiresAt: pass.expiresAt,
+    }));
 
     return Response.json({ passes: result });
   } catch (error) {
     console.error("Pass check API error:", error);
-    return Response.json(
-      { error: "Szerverhiba tortent" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Szerverhiba tortent" }, { status: 500 });
   }
 }
