@@ -19,21 +19,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const weekStartDate = new Date(weekStart + "T00:00:00");
+    // UTC-ben számolunk, hogy a szerver időzónája ne csúsztassa el a napokat.
+    const weekStartDate = new Date(weekStart + "T00:00:00Z");
     if (isNaN(weekStartDate.getTime())) {
       return Response.json({ error: "Ervenytelen datum" }, { status: 400 });
     }
 
     const weekEndDate = new Date(weekStartDate);
-    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 6);
     const weekEnd = weekEndDate.toISOString().split("T")[0];
 
     const daysInWeek: Array<{ date: string; dayOfWeek: number }> = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStartDate);
-      d.setDate(d.getDate() + i);
+      d.setUTCDate(d.getUTCDate() + i);
       const isoString = d.toISOString().split("T")[0];
-      const jsDay = d.getDay();
+      const jsDay = d.getUTCDay();
       const isoDay = jsDay === 0 ? 7 : jsDay;
       daysInWeek.push({ date: isoString, dayOfWeek: isoDay });
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 /* ═══════════════════════════════════════
    Types
@@ -67,146 +67,6 @@ const HU_MONTHS = [
 ];
 
 /* ═══════════════════════════════════════
-   Seed data generator
-   ═══════════════════════════════════════ */
-
-const CLASS_TYPES = [
-  {
-    name: "Reformer Alapok",
-    slug: "reformer-alapok",
-    tagline: "A testérzékelés első lépései",
-    price: 4500,
-    difficulty: 1,
-    isPrivate: false,
-    maxSpots: 6,
-  },
-  {
-    name: "Reformer Flow",
-    slug: "reformer-flow",
-    tagline: "Erő és elegancia egyensúlya",
-    price: 5000,
-    difficulty: 2,
-    isPrivate: false,
-    maxSpots: 6,
-  },
-  {
-    name: "Reformer Sculpt",
-    slug: "reformer-sculpt",
-    tagline: "Formáld a tested precízióval",
-    price: 5000,
-    difficulty: 3,
-    isPrivate: false,
-    maxSpots: 6,
-  },
-  {
-    name: "Privát Óra",
-    slug: "privat-ora",
-    tagline: "Kizárólag rád szabva",
-    price: 12000,
-    difficulty: 0,
-    isPrivate: true,
-    maxSpots: 1,
-  },
-];
-
-const INSTRUCTORS = ["Kovács Anna", "Nagy Eszter"];
-
-// Deterministic pseudo-random based on string seed
-function seededRandom(seed: string): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return Math.abs(hash % 100) / 100;
-}
-
-function generateWeekSlots(monday: Date): ScheduleSlot[] {
-  const slots: ScheduleSlot[] = [];
-
-  // Monday-Friday schedule templates
-  const weekdayTemplates = [
-    // Monday
-    [
-      { time: "09:00", classIdx: 0, instrIdx: 0 },
-      { time: "11:00", classIdx: 1, instrIdx: 1 },
-      { time: "17:00", classIdx: 2, instrIdx: 0 },
-      { time: "18:30", classIdx: 3, instrIdx: 1 },
-    ],
-    // Tuesday
-    [
-      { time: "08:00", classIdx: 1, instrIdx: 0 },
-      { time: "10:00", classIdx: 0, instrIdx: 1 },
-      { time: "17:30", classIdx: 2, instrIdx: 0 },
-    ],
-    // Wednesday
-    [
-      { time: "09:00", classIdx: 2, instrIdx: 1 },
-      { time: "11:00", classIdx: 0, instrIdx: 0 },
-      { time: "16:00", classIdx: 3, instrIdx: 0 },
-      { time: "18:00", classIdx: 1, instrIdx: 1 },
-    ],
-    // Thursday
-    [
-      { time: "08:00", classIdx: 0, instrIdx: 1 },
-      { time: "10:00", classIdx: 1, instrIdx: 0 },
-      { time: "17:00", classIdx: 2, instrIdx: 1 },
-      { time: "19:00", classIdx: 1, instrIdx: 0 },
-    ],
-    // Friday
-    [
-      { time: "09:00", classIdx: 1, instrIdx: 1 },
-      { time: "11:00", classIdx: 0, instrIdx: 0 },
-      { time: "16:00", classIdx: 2, instrIdx: 1 },
-    ],
-    // Saturday
-    [
-      { time: "09:00", classIdx: 1, instrIdx: 0 },
-      { time: "11:00", classIdx: 0, instrIdx: 1 },
-    ],
-    // Sunday (empty)
-    [],
-  ];
-
-  weekdayTemplates.forEach((dayTemplate, dayOffset) => {
-    const date = addDays(monday, dayOffset);
-    const dateStr = formatDateISO(date);
-
-    dayTemplate.forEach((item, slotIdx) => {
-      const cls = CLASS_TYPES[item.classIdx];
-      const instructor = INSTRUCTORS[item.instrIdx];
-      const seed = `${dateStr}-${item.time}-${slotIdx}`;
-      const rand = seededRandom(seed);
-
-      const bookedSpots = cls.isPrivate
-        ? (rand > 0.4 ? 1 : 0)
-        : Math.min(cls.maxSpots, Math.floor(rand * 6) + 1);
-
-      slots.push({
-        id: `slot-${dateStr}-${item.time.replace(":", "")}`,
-        classDate: dateStr,
-        className: cls.name,
-        classSlug: cls.slug,
-        classTagline: cls.tagline,
-        startTime: item.time,
-        durationMin: cls.isPrivate ? 55 : 50,
-        priceHuf: cls.price,
-        difficulty: cls.difficulty,
-        isPrivate: cls.isPrivate,
-        instructorName: instructor,
-        instructorAvatar: null,
-        maxSpots: cls.maxSpots,
-        bookedSpots,
-        availableSpots: cls.maxSpots - bookedSpots,
-      });
-    });
-  });
-
-  return slots;
-}
-
-/* ═══════════════════════════════════════
    Hook
    ═══════════════════════════════════════ */
 
@@ -218,9 +78,45 @@ export function useSchedule() {
     instructor: null,
   });
 
+  // Az órarend az adatbázisból jön (/api/schedule), az admin felületen kezelt órák alapján.
+  const [weekSlots, setWeekSlots] = useState<ScheduleSlot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const weekKey = formatDateISO(getMonday(weekStart));
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setLoadError(false);
+    fetch(`/api/schedule?weekStart=${weekKey}`, { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as { schedule: ScheduleSlot[] };
+        setWeekSlots(
+          data.schedule.map((s) => ({
+            ...s,
+            classTagline: s.classTagline ?? "",
+            difficulty: s.difficulty ?? 0,
+            isPrivate: Boolean(s.isPrivate),
+          }))
+        );
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        if (error?.name === "AbortError") return;
+        setWeekSlots([]);
+        setLoadError(true);
+        setIsLoading(false);
+      });
+    return () => controller.abort();
+  }, [weekKey, reloadKey]);
+
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+
   const slots = useMemo(() => {
-    const monday = getMonday(weekStart);
-    let result = generateWeekSlots(monday);
+    let result = weekSlots;
 
     if (filters.classType) {
       result = result.filter((s) => s.classSlug === filters.classType);
@@ -230,7 +126,7 @@ export function useSchedule() {
     }
 
     return result;
-  }, [weekStart, filters]);
+  }, [weekSlots, filters]);
 
   const weekLabel = useMemo(() => {
     const today = new Date();
@@ -306,7 +202,9 @@ export function useSchedule() {
     goToNextWeek,
     canGoPrev,
     isCurrentWeek,
-    isLoading: false, // Will become true when connected to API
+    isLoading,
+    loadError,
+    reload,
   };
 }
 

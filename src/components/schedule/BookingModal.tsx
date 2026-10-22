@@ -12,6 +12,8 @@ interface BookingModalProps {
   slot: ScheduleSlot | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Sikeres, azonnal megerősített (bérletes) foglalás után az órarend frissítéséhez. */
+  onBooked?: () => void;
 }
 
 interface FormData {
@@ -172,6 +174,7 @@ export default function BookingModal({
   slot,
   isOpen,
   onClose,
+  onBooked,
 }: BookingModalProps) {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({
@@ -182,6 +185,7 @@ export default function BookingModal({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -194,6 +198,7 @@ export default function BookingModal({
       setFormData({ name: "", email: "", phone: "", hasPass: false });
       setErrors({});
       setIsSubmitting(false);
+      setPayError(null);
     }
   }, [isOpen, slot]);
 
@@ -274,22 +279,89 @@ export default function BookingModal({
     setStep(2);
   }, [formData]);
 
+  const bookingErrorMessage = (code: string | undefined, fallback?: string) => {
+    switch (code) {
+      case "CLASS_FULL":
+        return "Az óra időközben betelt. Válassz másik időpontot.";
+      case "DUPLICATE_BOOKING":
+        return "Erre az órára ezzel az e-mail-címmel már van foglalásod.";
+      case "PASS_INVALID":
+        return fallback ?? "A bérlet nem használható ehhez a foglaláshoz.";
+      default:
+        return "A foglalás most nem sikerült. Próbáld újra, vagy keress minket telefonon.";
+    }
+  };
+
+  const createBooking = useCallback(
+    async (paymentType: "stripe" | "pass", passId?: string) => {
+      if (!slot) return null;
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scheduledClassId: slot.id,
+          classDate: slot.classDate,
+          customerName: formData.name.trim(),
+          customerEmail: formData.email.trim(),
+          customerPhone: formData.phone.trim(),
+          paymentType,
+          passId: passId ?? null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPayError(bookingErrorMessage(data?.error, data?.message));
+        return null;
+      }
+      return data as { checkoutUrl?: string; success?: boolean };
+    },
+    [slot, formData] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   const handlePayWithPass = useCallback(async () => {
     setIsSubmitting(true);
-    // Simulates API call - will be replaced with real booking
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setStep(3);
-  }, []);
+    setPayError(null);
+    try {
+      const check = await fetch("/api/passes/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email.trim() }),
+      });
+      const checkData = await check.json().catch(() => ({}));
+      const pass = checkData?.passes?.[0] as { id: string } | undefined;
+      if (!check.ok || !pass) {
+        setPayError(
+          "Ehhez az e-mail-címhez nincs érvényes bérlet. Fizethetsz bankkártyával is."
+        );
+        return;
+      }
+      const result = await createBooking("pass", pass.id);
+      if (result?.success) {
+        onBooked?.();
+        setStep(3);
+      }
+    } catch {
+      setPayError(bookingErrorMessage(undefined));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [formData.email, createBooking, onBooked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePayWithCard = useCallback(async () => {
     setIsSubmitting(true);
-    // Simulates redirect to Stripe - will be replaced with real integration
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    setPayError(null);
+    try {
+      const result = await createBooking("stripe");
+      if (result?.checkoutUrl) {
+        window.location.assign(result.checkoutUrl);
+        return; // az átirányítás után az oldal elhagyja a modált
+      }
+      if (result) setPayError(bookingErrorMessage(undefined));
+    } catch {
+      setPayError(bookingErrorMessage(undefined));
+    }
     setIsSubmitting(false);
-    // In real implementation: redirect to Stripe checkout
-    alert("Stripe fizetési felület megnyitása (hamarosan)");
-  }, []);
+  }, [createBooking]);
 
   if (!isOpen || !slot) return null;
 
@@ -428,10 +500,15 @@ export default function BookingModal({
               <div className="space-y-5 mb-8">
                 {/* Név */}
                 <div>
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-background/30 font-medium mb-2">
+                  <label
+                    htmlFor="booking-name"
+                    className="block text-[10px] tracking-[0.2em] uppercase text-background/60 font-medium mb-2"
+                  >
                     Név
                   </label>
                   <input
+                    id="booking-name"
+                    autoComplete="name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => {
@@ -450,10 +527,15 @@ export default function BookingModal({
 
                 {/* Email */}
                 <div>
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-background/30 font-medium mb-2">
+                  <label
+                    htmlFor="booking-email"
+                    className="block text-[10px] tracking-[0.2em] uppercase text-background/60 font-medium mb-2"
+                  >
                     Email
                   </label>
                   <input
+                    id="booking-email"
+                    autoComplete="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => {
@@ -472,10 +554,15 @@ export default function BookingModal({
 
                 {/* Telefonszám */}
                 <div>
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-background/30 font-medium mb-2">
+                  <label
+                    htmlFor="booking-phone"
+                    className="block text-[10px] tracking-[0.2em] uppercase text-background/60 font-medium mb-2"
+                  >
                     Telefonszám
                   </label>
                   <input
+                    id="booking-phone"
+                    autoComplete="tel"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => {
@@ -584,6 +671,15 @@ export default function BookingModal({
                   </span>
                 </div>
               </div>
+
+              {payError && (
+                <p
+                  role="alert"
+                  className="mb-5 rounded-[8px] border border-[#8B4513]/50 bg-[#8B4513]/20 px-4 py-3 text-[13px] text-background leading-relaxed"
+                >
+                  {payError}
+                </p>
+              )}
 
               {/* Payment buttons */}
               <div className="space-y-3 mb-8">

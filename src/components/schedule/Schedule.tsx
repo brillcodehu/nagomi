@@ -266,6 +266,24 @@ export default function Schedule() {
           />
         </div>
 
+        {schedule.isLoading && (
+          <p role="status" className="mb-6 text-[13px] text-foreground/70">
+            Az órarend betöltése...
+          </p>
+        )}
+        {schedule.loadError && (
+          <div role="alert" className="mb-6 text-[13px] text-foreground/80">
+            Az órarend most nem tölthető be.{" "}
+            <button
+              type="button"
+              onClick={schedule.reload}
+              className="underline underline-offset-4 cursor-pointer"
+            >
+              Újrapróbálom
+            </button>
+          </div>
+        )}
+
         {/* ═══ Desktop/Tablet Grid (lg+) ═══ */}
         <div ref={gridRef} className="hidden lg:block">
           <div className="grid grid-cols-7 gap-px bg-foreground/[0.04] rounded-2xl overflow-hidden">
@@ -381,6 +399,7 @@ export default function Schedule() {
         slot={selectedSlot}
         isOpen={modalOpen}
         onClose={handleCloseModal}
+        onBooked={schedule.reload}
       />
     </section>
   );

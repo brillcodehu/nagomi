@@ -10,8 +10,15 @@ import { eq, and, inArray, sql } from "drizzle-orm";
 import { createClassCheckoutSession } from "@/lib/stripe/helpers";
 import { bookingFormSchema } from "@/lib/utils/validators";
 import { headers } from "next/headers";
+import { escapeHtml, sendMail } from "@/lib/email/send";
 
 export const dynamic = "force-dynamic";
+
+/** A Drizzle a postgres hibát a cause mezőbe csomagolja, ezért mindkettőt nézzük. */
+function isUniqueViolation(err: unknown): boolean {
+  const e = err as { code?: string; cause?: { code?: string } };
+  return e?.code === "23505" || e?.cause?.code === "23505";
+}
 
 export async function POST(request: Request) {
   try {
@@ -105,8 +112,7 @@ export async function POST(request: Request) {
           .returning({ id: bookings.id });
         bookingId = inserted.id;
       } catch (err: unknown) {
-        const pgErr = err as { code?: string; message?: string };
-        if (pgErr.code === "23505") {
+        if (isUniqueViolation(err)) {
           return Response.json(
             {
               error: "DUPLICATE_BOOKING",
@@ -126,16 +132,34 @@ export async function POST(request: Request) {
       const origin =
         headersList.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
-      const session = await createClassCheckoutSession({
-        bookingId,
-        className: scRow.ctName,
-        classDate,
-        startTime: scRow.startTime.slice(0, 5),
-        instructorName: scRow.instName,
-        priceHuf: scRow.ctPriceHuf,
-        customerEmail,
-        origin,
-      });
+      let session;
+      try {
+        session = await createClassCheckoutSession({
+          bookingId,
+          className: scRow.ctName,
+          classDate,
+          startTime: scRow.startTime.slice(0, 5),
+          instructorName: scRow.instName,
+          priceHuf: scRow.ctPriceHuf,
+          customerEmail,
+          origin,
+        });
+      } catch (stripeError) {
+        // A fizetési oldal nem jött létre: a függő foglalás ne foglalja a helyet.
+        console.error("Stripe checkout session error:", stripeError);
+        await db
+          .update(bookings)
+          .set({
+            status: "cancelled",
+            cancelledAt: new Date(),
+            cancellationReason: "Fizetési oldal létrehozása sikertelen",
+          })
+          .where(eq(bookings.id, bookingId));
+        return Response.json(
+          { error: "PAYMENT_UNAVAILABLE", message: "A fizetés most nem érhető el" },
+          { status: 502 }
+        );
+      }
 
       await db
         .update(bookings)
@@ -218,8 +242,7 @@ export async function POST(request: Request) {
           .returning({ id: bookings.id });
         bookingId = inserted.id;
       } catch (err: unknown) {
-        const pgErr = err as { code?: string; message?: string };
-        if (pgErr.code === "23505") {
+        if (isUniqueViolation(err)) {
           return Response.json(
             {
               error: "DUPLICATE_BOOKING",
@@ -235,11 +258,44 @@ export async function POST(request: Request) {
         );
       }
 
-      // Decrement pass occasions
-      await db
+      // Alkalom levonása: feltételes, hogy egyidejű foglalásnál ne menjen 0 alá.
+      const decremented = await db
         .update(customerPasses)
         .set({ remainingOccasions: sql`${customerPasses.remainingOccasions} - 1` })
-        .where(eq(customerPasses.id, passId));
+        .where(
+          and(
+            eq(customerPasses.id, passId),
+            sql`${customerPasses.remainingOccasions} > 0`
+          )
+        )
+        .returning({ id: customerPasses.id });
+
+      if (decremented.length === 0) {
+        await db.delete(bookings).where(eq(bookings.id, bookingId));
+        return Response.json(
+          {
+            error: "PASS_INVALID",
+            message: "A berleten nem maradt felhasznalhato alkalom",
+          },
+          { status: 400 }
+        );
+      }
+
+      await sendMail({
+        to: customerEmail,
+        subject: `Foglalas megerositese - ${scRow.ctName}`,
+        html: `
+          <h2>Kedves ${escapeHtml(customerName)}!</h2>
+          <p>A foglalasod a berleteddel sikeresen megerositesre kerult.</p>
+          <table style="border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Ora:</td><td>${escapeHtml(scRow.ctName)}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Datum:</td><td>${classDate}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Idopont:</td><td>${scRow.startTime.slice(0, 5)}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Oktato:</td><td>${escapeHtml(scRow.instName)}</td></tr>
+          </table>
+          <p>Varunk szeretettel a Nagomi Pilates Studioban!</p>
+        `,
+      });
 
       return Response.json({ success: true, bookingId });
     }

@@ -3,6 +3,7 @@ import { bookings, customerPasses } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { stripe } from "@/lib/stripe/client";
 import { z } from "zod";
+import { stornoInvoiceForBooking } from "@/lib/invoicing";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,11 @@ export async function POST(request: Request) {
         cancellationReason: reason ?? null,
       })
       .where(eq(bookings.id, bookingId));
+
+    // Visszatérített fizetésnél a számla sztornója (hiba esetén sem bukik a lemondás)
+    if (booking.paymentType === "stripe" && booking.status === "confirmed") {
+      await stornoInvoiceForBooking(bookingId);
+    }
 
     return Response.json({ success: true });
   } catch (error) {
