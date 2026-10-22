@@ -45,6 +45,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/admin/login",
   },
   callbacks: {
+    // A proxy (src/proxy.ts) ezt hívja az /admin útvonalakon: belépés nélkül
+    // az /admin/login-ra irányít, a login oldal maga szabad.
+    authorized({ auth, request }) {
+      if (request.nextUrl.pathname.startsWith("/admin/login")) return true;
+      return !!auth?.user;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.instructorId = user.id;

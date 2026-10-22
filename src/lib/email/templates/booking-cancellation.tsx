@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { ADDRESS, CONTACT_EMAIL, SITE_NAME } from "@/lib/site";
 
 interface BookingCancellationProps {
   customerName: string;
@@ -51,13 +52,13 @@ export default function BookingCancellation({
           </Section>
 
           <Text style={paragraph}>
-            Ha kérdésed van, keresd fel stúdiónkat az info@nagomipilates.hu
+            Ha kérdésed van, keresd fel stúdiónkat az {CONTACT_EMAIL}
             email címen.
           </Text>
 
           <Hr style={hr} />
           <Text style={footer}>
-            Nagomi Pilates Studio | Debrecen-Józsa, Deák Ferenc utca 2.
+            {SITE_NAME} | {ADDRESS}
           </Text>
         </Container>
       </Body>

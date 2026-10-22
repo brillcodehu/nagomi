@@ -16,5 +16,7 @@ export const resend = new Proxy({} as Resend, {
   },
 });
 
-export const EMAIL_FROM = "Nagomi Pilates <foglalas@nagomipilates.hu>";
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "info@nagomipilates.hu";
+import { FROM_EMAIL, ADMIN_NOTIFY_EMAIL } from "@/lib/site";
+
+export const EMAIL_FROM = FROM_EMAIL;
+export const ADMIN_EMAIL = ADMIN_NOTIFY_EMAIL;

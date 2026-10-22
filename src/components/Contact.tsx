@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import gsap from "gsap";
+import { ADDRESS, CONTACT_EMAIL } from "@/lib/site";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -12,11 +13,11 @@ const ease = [0.22, 1, 0.36, 1] as const;
 const contactInfo = [
   {
     label: "Stúdió",
-    value: "Debrecen-Józsa\nDeák Ferenc utca 2.",
+    value: ADDRESS.replace(", ", "\n"),
   },
   {
     label: "Email",
-    value: "hello@nagomi.hu",
+    value: CONTACT_EMAIL,
   },
   {
     label: "Nyitvatartás",

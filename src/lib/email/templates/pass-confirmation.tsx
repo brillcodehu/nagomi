@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { ADDRESS, CONTACT_EMAIL, SITE_NAME } from "@/lib/site";
 
 interface PassConfirmationProps {
   customerName: string;
@@ -64,7 +65,7 @@ export default function PassConfirmation({
 
           <Hr style={hr} />
           <Text style={footer}>
-            Nagomi Pilates Studio | Debrecen-Józsa, Deák Ferenc utca 2.
+            {SITE_NAME} | {ADDRESS}
           </Text>
         </Container>
       </Body>
