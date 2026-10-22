@@ -191,7 +191,7 @@ export default function AdminClassTypesPage() {
         </h1>
         <button
           onClick={openNewForm}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 bg-primary-strong text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
         >
           <Plus size={16} />
           Uj oratipus
@@ -396,7 +396,7 @@ export default function AdminClassTypesPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="flex-1 bg-primary-strong text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   {saving ? "Mentes..." : "Mentes"}
                 </button>

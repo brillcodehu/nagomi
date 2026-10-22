@@ -92,7 +92,7 @@ function LegalSettingsForm() {
         <button
           type="submit"
           disabled={saving}
-          className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+          className="bg-primary-strong text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
         >
           {saving ? "Mentés..." : "Mentés"}
         </button>
