@@ -29,7 +29,7 @@ function MegszakitvaContent() {
           Fizetés megszakítva
         </h1>
 
-        <p className="text-[14px] text-foreground/60 leading-relaxed mb-8">
+        <p className="text-[14px] text-foreground/75 leading-relaxed mb-8">
           A fizetési folyamat megszakadt. Foglalásod nem jött létre, nem
           történt terhelés. Bármikor újra megpróbálhatod.
         </p>
@@ -43,14 +43,14 @@ function MegszakitvaContent() {
           </a>
           <a
             href="/"
-            className="inline-flex items-center justify-center gap-2 w-full px-8 py-3.5 text-foreground/50 text-[11px] tracking-[0.15em] uppercase font-medium hover:text-foreground transition-colors duration-300 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 w-full px-8 py-3.5 text-foreground/75 text-[11px] tracking-[0.15em] uppercase font-medium hover:text-foreground transition-colors duration-300 cursor-pointer"
           >
             Főoldal
           </a>
         </div>
 
         {/* Brand footer */}
-        <p className="mt-16 text-[10px] tracking-[0.2em] uppercase text-foreground/25">
+        <p className="mt-16 text-[10px] tracking-[0.2em] uppercase text-foreground/70">
           Nagomi Pilates Studio
         </p>
       </div>

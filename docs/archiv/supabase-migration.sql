@@ -1,3 +1,6 @@
+-- ARCHIVÁLT (2026-10-22): régi Supabase-séma maradvány, a stack része már nem (Drizzle + saját Postgres).
+-- A mai séma: src/lib/db/schema.ts. Csak történeti hivatkozás, nem futtatandó.
+
 -- ============================================================
 -- NAGOMI PILATES - FOGLALASI RENDSZER
 -- Teljes adatbazis schema, seed data

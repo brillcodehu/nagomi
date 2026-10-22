@@ -10,7 +10,7 @@ export default function Footer() {
   return (
     <footer className="relative bg-foreground overflow-hidden">
       <div className="px-6 lg:px-16 pt-12 md:pt-16 pb-8 md:pb-10">
-        <p className="font-[family-name:var(--font-playfair)] text-background/25 text-[clamp(1.1rem,2.5vw,1.6rem)] font-light tracking-wide leading-[1.6] md:leading-none text-center">
+        <p className="font-[family-name:var(--font-playfair)] text-background/70 text-[clamp(1.1rem,2.5vw,1.6rem)] font-light tracking-wide leading-[1.6] md:leading-none text-center">
           <span className="md:hidden">
             {addressCity}
             {addressStreet && (

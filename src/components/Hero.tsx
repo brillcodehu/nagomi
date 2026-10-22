@@ -205,7 +205,7 @@ export default function Hero() {
                 <a
                   href="#foglalj"
                   className="group inline-flex items-center gap-3 px-8 py-4
-                    bg-primary text-primary-foreground
+                    bg-primary-strong text-primary-foreground
                     font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase
                     rounded-full hover:bg-background hover:text-foreground
                     transition-all duration-400"

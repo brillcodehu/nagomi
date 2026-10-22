@@ -71,7 +71,7 @@ export default function AdminSidebar({ instructorName }: AdminSidebarProps) {
               onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 active
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary-strong text-primary-foreground"
                   : "text-foreground hover:bg-muted"
               }`}
             >

@@ -59,7 +59,7 @@ function SikeresContent() {
                 : "Foglalásod megerősítve!"}
             </h1>
 
-            <p className="text-[14px] text-foreground/60 leading-relaxed mb-8">
+            <p className="text-[14px] text-foreground/75 leading-relaxed mb-8">
               {type === "pass"
                 ? "A bérleted sikeresen aktiváltuk. Mostantól foglalhatsz órákat a bérletedből. Részleteket emailben küldtük."
                 : "Az órád sikeresen lefoglaltuk. Email visszaigazolást küldtünk a megadott címre a foglalás részleteivel."}
@@ -74,7 +74,7 @@ function SikeresContent() {
               </a>
               <a
                 href="/"
-                className="inline-flex items-center justify-center gap-2 w-full px-8 py-3.5 text-foreground/50 text-[11px] tracking-[0.15em] uppercase font-medium hover:text-foreground transition-colors duration-300 cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 w-full px-8 py-3.5 text-foreground/75 text-[11px] tracking-[0.15em] uppercase font-medium hover:text-foreground transition-colors duration-300 cursor-pointer"
               >
                 Főoldal
               </a>
@@ -106,7 +106,7 @@ function SikeresContent() {
               Hiba történt
             </h1>
 
-            <p className="text-[14px] text-foreground/60 leading-relaxed mb-8">
+            <p className="text-[14px] text-foreground/75 leading-relaxed mb-8">
               A fizetés feldolgozása során probléma merült fel. Kérjük,
               próbáld újra vagy vedd fel velünk a kapcsolatot.
             </p>
@@ -121,7 +121,7 @@ function SikeresContent() {
         )}
 
         {/* Brand footer */}
-        <p className="mt-16 text-[10px] tracking-[0.2em] uppercase text-foreground/25">
+        <p className="mt-16 text-[10px] tracking-[0.2em] uppercase text-foreground/70">
           Nagomi Pilates Studio
         </p>
       </div>

@@ -313,7 +313,7 @@ function FAQModal({
             <a
               href="#foglalj"
               onClick={onClose}
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-primary/90 text-primary-foreground font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase rounded-full hover:bg-background hover:text-foreground transition-all duration-400"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-primary-strong text-primary-foreground font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase rounded-full hover:bg-background hover:text-foreground transition-all duration-400"
             >
               <span>Foglald le az első órádat</span>
               <ArrowIcon />
@@ -785,7 +785,7 @@ export default function Classes() {
 
                           <a
                             href="#foglalj"
-                            className="group inline-flex items-center gap-3 px-7 py-3.5 bg-primary/20 text-primary font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase rounded-full hover:bg-primary hover:text-primary-foreground transition-all duration-400"
+                            className="group inline-flex items-center gap-3 px-7 py-3.5 bg-primary/20 text-primary font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase rounded-full hover:bg-primary-strong hover:text-primary-foreground transition-all duration-400"
                           >
                             <span>{cls.cta}</span>
                             <ArrowIcon />
@@ -1014,7 +1014,7 @@ export default function Classes() {
 
                   <a
                     href="#foglalj"
-                    className="group inline-flex items-center gap-3 px-7 py-3.5 bg-primary/90 text-primary-foreground font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase rounded-full hover:bg-background hover:text-foreground transition-all duration-400 whitespace-nowrap"
+                    className="group inline-flex items-center gap-3 px-7 py-3.5 bg-primary-strong text-primary-foreground font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase rounded-full hover:bg-background hover:text-foreground transition-all duration-400 whitespace-nowrap"
                   >
                     <span>Első óra foglalás</span>
                     <ArrowIcon />

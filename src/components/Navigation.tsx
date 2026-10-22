@@ -123,7 +123,7 @@ export default function Navigation() {
                 href="#foglalj"
                 className="hidden lg:inline-flex items-center gap-2 px-6 py-2.5 shrink-0
                   font-[family-name:var(--font-mono)] text-[10px] xl:text-[10.5px] tracking-[0.14em] uppercase
-                  bg-primary text-primary-foreground rounded-full
+                  bg-primary-strong text-primary-foreground rounded-full
                   hover:bg-foreground
                   transition-colors duration-300"
               >
@@ -236,7 +236,7 @@ export default function Navigation() {
                 }}
                 className="inline-flex items-center gap-2.5 px-8 py-3.5
                   font-[family-name:var(--font-mono)] text-[10px] tracking-[0.16em] uppercase
-                  bg-primary text-primary-foreground rounded-full"
+                  bg-primary-strong text-primary-foreground rounded-full"
               >
                 <span>Foglalj órát</span>
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">

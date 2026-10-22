@@ -9,7 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { ADDRESS, CONTACT_EMAIL, SITE_NAME } from "@/lib/site";
+import { ADDRESS, SITE_NAME } from "@/lib/site";
 
 interface PassConfirmationProps {
   customerName: string;

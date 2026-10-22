@@ -79,39 +79,45 @@ export function useSchedule() {
   });
 
   // Az órarend az adatbázisból jön (/api/schedule), az admin felületen kezelt órák alapján.
-  const [weekSlots, setWeekSlots] = useState<ScheduleSlot[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-
   const weekKey = formatDateISO(getMonday(weekStart));
+  const requestKey = `${weekKey}#${reloadKey}`;
+  const [loaded, setLoaded] = useState<{
+    key: string;
+    slots: ScheduleSlot[];
+    error: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    setIsLoading(true);
-    setLoadError(false);
     fetch(`/api/schedule?weekStart=${weekKey}`, { signal: controller.signal })
       .then(async (res) => {
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as { schedule: ScheduleSlot[] };
-        setWeekSlots(
-          data.schedule.map((s) => ({
+        setLoaded({
+          key: requestKey,
+          error: false,
+          slots: data.schedule.map((s) => ({
             ...s,
             classTagline: s.classTagline ?? "",
             difficulty: s.difficulty ?? 0,
             isPrivate: Boolean(s.isPrivate),
-          }))
-        );
-        setIsLoading(false);
+          })),
+        });
       })
       .catch((error) => {
         if (error?.name === "AbortError") return;
-        setWeekSlots([]);
-        setLoadError(true);
-        setIsLoading(false);
+        setLoaded({ key: requestKey, error: true, slots: [] });
       });
     return () => controller.abort();
-  }, [weekKey, reloadKey]);
+  }, [weekKey, requestKey]);
+
+  const isLoading = loaded?.key !== requestKey;
+  const loadError = !isLoading && Boolean(loaded?.error);
+  const weekSlots = useMemo(
+    () => (loaded && loaded.key === requestKey ? loaded.slots : []),
+    [loaded, requestKey]
+  );
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
