@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
-import { classTypes, passTypes, instructors, scheduledClasses } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
-import { hash } from "bcryptjs";
+import { DEFAULT_ADMIN_EMAIL, seedIfEmpty } from "@/lib/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +114,37 @@ export async function GET() {
       )
     `);
 
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL DEFAULT '',
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        seq SERIAL NOT NULL,
+        stripe_checkout_session_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+        customer_pass_id UUID REFERENCES customer_passes(id) ON DELETE SET NULL,
+        customer_name TEXT NOT NULL,
+        customer_email TEXT NOT NULL,
+        description TEXT NOT NULL,
+        amount_huf INT NOT NULL,
+        provider TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'issued',
+        invoice_number TEXT,
+        provider_ref TEXT,
+        error TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )
+    `);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS invoices_unique_session_kind ON invoices(stripe_checkout_session_id, kind)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status)`);
+
     // Indexes
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_bookings_class_date ON bookings(scheduled_class_id, class_date)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings(customer_email)`);
@@ -124,82 +154,21 @@ export async function GET() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_scheduled_classes_date ON scheduled_classes(specific_date)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_customer_passes_email ON customer_passes(customer_email)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_customer_passes_active ON customer_passes(is_active, expires_at)`);
+    try {
+      await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS customer_passes_unique_session ON customer_passes(stripe_checkout_session_id)`);
+    } catch (indexError) {
+      // Már létező duplikált session-azonosító esetén kézi tisztítás kell.
+      console.error("customer_passes egyedi index nem hozható létre:", indexError);
+    }
 
-    // Check if already seeded
-    const existing = await db.select({ id: classTypes.id }).from(classTypes).limit(1);
-    if (existing.length > 0) {
+    const seeded = await seedIfEmpty("Nagomi2026Pilates");
+    if (!seeded) {
       return Response.json({ message: "Az adatbazis mar be van allitva." });
     }
 
-    // Seed class types
-    const [ct1, ct2, ct3, ct4] = await db.insert(classTypes).values([
-      { name: "Reformer Alapok", slug: "reformer-alapok", description: "Ismerkedj meg a reformer geppel es a pilates alapelveivel.", tagline: "A testerzekeles elso lepesei", durationMin: 50, maxCapacity: 6, priceHuf: 4500, difficulty: 1, isPrivate: false, sortOrder: 1 },
-      { name: "Reformer Flow", slug: "reformer-flow", description: "Folyamatos, aramlo mozdulatsorok a reformer gepen.", tagline: "Ero es elegancia egyensulya", durationMin: 55, maxCapacity: 6, priceHuf: 5000, difficulty: 2, isPrivate: false, sortOrder: 2 },
-      { name: "Reformer Sculpt", slug: "reformer-sculpt", description: "Intenzivebb ora magasabb ellenallassal.", tagline: "Formald a tested precizoval", durationMin: 50, maxCapacity: 6, priceHuf: 5000, difficulty: 3, isPrivate: false, sortOrder: 3 },
-      { name: "Privat Ora", slug: "privat-ora", description: "Kizarolag rad szabott edzesterv.", tagline: "Kizarolag rad szabva", durationMin: 55, maxCapacity: 1, priceHuf: 12000, difficulty: 0, isPrivate: true, sortOrder: 4 },
-    ]).returning({ id: classTypes.id, slug: classTypes.slug });
-
-    // Seed pass types
-    await db.insert(passTypes).values([
-      { name: "Proba alkalom", occasions: 1, priceHuf: 3500, validDays: 14, description: "Elso latogatashoz - kedvezmenyes probaora.", sortOrder: 1 },
-      { name: "5 alkalmas berlet", occasions: 5, priceHuf: 20000, validDays: 30, description: "5 alkalom, 30 napos ervenyesseg.", sortOrder: 2 },
-      { name: "10 alkalmas berlet", occasions: 10, priceHuf: 35000, validDays: 60, description: "10 alkalom, 60 napos ervenyesseg.", sortOrder: 3 },
-    ]);
-
-    // Seed admin instructor
-    const passwordHash = await hash("Nagomi2026Pilates", 10);
-
-    const [admin] = await db.insert(instructors).values([
-      { name: "Antonia", email: "antonia@nagomi-pilates.hu", passwordHash, bio: "Studio tulajdonos es pilates oktato.", isActive: true },
-    ]).returning({ id: instructors.id });
-
-    // Seed schedule (class type slug -> id map)
-    const ctMap = new Map(
-      [ct1, ct2, ct3, ct4].map((ct) => [ct.slug, ct.id])
-    );
-
-    const scheduleData = [
-      // Hetfo
-      { slug: "reformer-alapok", dow: 1, time: "09:00" },
-      { slug: "reformer-flow", dow: 1, time: "10:30" },
-      { slug: "reformer-flow", dow: 1, time: "17:30" },
-      { slug: "reformer-sculpt", dow: 1, time: "19:00" },
-      // Kedd
-      { slug: "reformer-sculpt", dow: 2, time: "08:00" },
-      { slug: "reformer-alapok", dow: 2, time: "10:00" },
-      { slug: "reformer-flow", dow: 2, time: "18:00" },
-      // Szerda
-      { slug: "reformer-alapok", dow: 3, time: "09:00" },
-      { slug: "reformer-sculpt", dow: 3, time: "10:30" },
-      { slug: "reformer-sculpt", dow: 3, time: "17:30" },
-      { slug: "reformer-flow", dow: 3, time: "19:00" },
-      // Csutortok
-      { slug: "reformer-flow", dow: 4, time: "08:00" },
-      { slug: "reformer-alapok", dow: 4, time: "10:00" },
-      { slug: "reformer-alapok", dow: 4, time: "18:00" },
-      { slug: "reformer-sculpt", dow: 4, time: "19:00" },
-      // Pentek
-      { slug: "reformer-sculpt", dow: 5, time: "09:00" },
-      { slug: "reformer-flow", dow: 5, time: "10:30" },
-      { slug: "reformer-flow", dow: 5, time: "17:00" },
-      { slug: "reformer-alapok", dow: 5, time: "18:30" },
-      // Szombat
-      { slug: "reformer-alapok", dow: 6, time: "09:00" },
-      { slug: "reformer-flow", dow: 6, time: "10:30" },
-    ];
-
-    await db.insert(scheduledClasses).values(
-      scheduleData.map((s) => ({
-        classTypeId: ctMap.get(s.slug)!,
-        instructorId: admin.id,
-        dayOfWeek: s.dow,
-        startTime: s.time + ":00",
-      }))
-    );
-
     return Response.json({
       message: "Adatbazis sikeresen beallitva!",
-      admin: "antonia@nagomi-pilates.hu / Nagomi2026Pilates",
+      admin: `${DEFAULT_ADMIN_EMAIL} / Nagomi2026Pilates`,
     });
   } catch (error) {
     console.error("Setup error:", error);
