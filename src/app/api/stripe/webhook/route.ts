@@ -9,7 +9,9 @@ import {
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { verifyWebhookSignature } from "@/lib/stripe/helpers";
-import { resend, EMAIL_FROM, ADMIN_EMAIL } from "@/lib/email/resend";
+import { ADMIN_EMAIL } from "@/lib/email/resend";
+import { escapeHtml, sendMail } from "@/lib/email/send";
+import { issueInvoice } from "@/lib/invoicing";
 import type Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -90,7 +92,15 @@ async function handleClassBookingCompleted(
       ? session.payment_intent
       : session.payment_intent?.id ?? null;
 
-  // Update and return booking with class info
+  // Az újrapróbált webhook ne küldjön második levelet: ha a foglalás már
+  // megerősített, csak a (hiányzó) számlát pótoljuk.
+  const [before] = await db
+    .select({ status: bookings.status })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1);
+  const alreadyConfirmed = before?.status === "confirmed";
+
   await db
     .update(bookings)
     .set({
@@ -126,21 +136,35 @@ async function handleClassBookingCompleted(
     return;
   }
 
+  // Számla a fizetett foglalásról (idempotens, hiba esetén sem bukik a webhook)
+  if ((booking.amountHuf ?? 0) > 0) {
+    await issueInvoice({
+      sessionId: session.id,
+      kind: "class_booking",
+      bookingId: booking.id,
+      customerName: booking.customerName,
+      customerEmail: booking.customerEmail,
+      description: `${booking.ctName} – ${booking.classDate} ${booking.startTime.slice(0, 5)}`,
+      amountHuf: booking.amountHuf!,
+    });
+  }
+
+  if (alreadyConfirmed) return;
+
   // Send confirmation email to customer
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendMail({
       to: booking.customerEmail,
       subject: `Foglalas megerositese - ${booking.ctName}`,
       html: `
-        <h2>Kedves ${booking.customerName}!</h2>
+        <h2>Kedves ${escapeHtml(booking.customerName)}!</h2>
         <p>A foglalasod sikeresen megerositesre kerult.</p>
         <table style="border-collapse:collapse;margin:16px 0">
-          <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Ora:</td><td>${booking.ctName}</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Ora:</td><td>${escapeHtml(booking.ctName)}</td></tr>
           <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Datum:</td><td>${booking.classDate}</td></tr>
           <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Idopont:</td><td>${booking.startTime.slice(0, 5)}</td></tr>
           <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Idotartam:</td><td>${booking.ctDurationMin} perc</td></tr>
-          <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Oktato:</td><td>${booking.instName}</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Oktato:</td><td>${escapeHtml(booking.instName)}</td></tr>
         </table>
         <p>Varunk szeretettel a Nagomi Pilates Studioban!</p>
       `,
@@ -151,16 +175,15 @@ async function handleClassBookingCompleted(
 
   // Admin notification
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendMail({
       to: ADMIN_EMAIL,
       subject: `Uj foglalas - ${booking.customerName} - ${booking.ctName}`,
       html: `
         <h3>Uj foglalas erkezett</h3>
-        <p><strong>Vendeg:</strong> ${booking.customerName} (${booking.customerEmail})</p>
-        <p><strong>Ora:</strong> ${booking.ctName}</p>
+        <p><strong>Vendeg:</strong> ${escapeHtml(booking.customerName)} (${escapeHtml(booking.customerEmail)})</p>
+        <p><strong>Ora:</strong> ${escapeHtml(booking.ctName)}</p>
         <p><strong>Datum:</strong> ${booking.classDate} ${booking.startTime.slice(0, 5)}</p>
-        <p><strong>Oktato:</strong> ${booking.instName}</p>
+        <p><strong>Oktato:</strong> ${escapeHtml(booking.instName)}</p>
         <p><strong>Osszeg:</strong> ${booking.amountHuf?.toLocaleString("hu-HU")} Ft</p>
       `,
     });
@@ -191,6 +214,25 @@ async function handlePassPurchaseCompleted(
     return;
   }
 
+  // Idempotencia: ugyanahhoz a Stripe sessionhöz csak egy bérlet tartozhat.
+  const [existingPass] = await db
+    .select({ id: customerPasses.id })
+    .from(customerPasses)
+    .where(eq(customerPasses.stripeCheckoutSessionId, session.id))
+    .limit(1);
+  if (existingPass) {
+    await issueInvoice({
+      sessionId: session.id,
+      kind: "pass_purchase",
+      customerPassId: existingPass.id,
+      customerName: customerName ?? "",
+      customerEmail,
+      description: `${passType.name} – ${passType.occasions} alkalom`,
+      amountHuf: passType.priceHuf,
+    });
+    return;
+  }
+
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + (passType.validDays ?? 30));
 
@@ -212,24 +254,32 @@ async function handlePassPurchaseCompleted(
       stripeCheckoutSessionId: session.id,
       isActive: true,
     })
+    .onConflictDoNothing()
     .returning({ id: customerPasses.id });
 
-  if (!insertResult) {
-    console.error("Failed to create customer pass");
-    return;
-  }
+  // Egyidejű, ismételt webhook: a másik kérés már létrehozta a bérletet.
+  if (!insertResult) return;
+
+  await issueInvoice({
+    sessionId: session.id,
+    kind: "pass_purchase",
+    customerPassId: insertResult.id,
+    customerName: customerName ?? "",
+    customerEmail,
+    description: `${passType.name} – ${passType.occasions} alkalom`,
+    amountHuf: passType.priceHuf,
+  });
 
   // Send pass confirmation email
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendMail({
       to: customerEmail,
       subject: `Berlet vasarlas megerositese - ${passType.name}`,
       html: `
-        <h2>Kedves ${customerName}!</h2>
+        <h2>Kedves ${escapeHtml(customerName)}!</h2>
         <p>A berleted sikeresen aktiválva lett.</p>
         <table style="border-collapse:collapse;margin:16px 0">
-          <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Berlet:</td><td>${passType.name}</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Berlet:</td><td>${escapeHtml(passType.name)}</td></tr>
           <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Alkalmak:</td><td>${passType.occasions} alkalom</td></tr>
           <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Ervenyes:</td><td>${expiresAt.toLocaleDateString("hu-HU")}-ig</td></tr>
           <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Ar:</td><td>${passType.priceHuf.toLocaleString("hu-HU")} Ft</td></tr>
@@ -243,14 +293,13 @@ async function handlePassPurchaseCompleted(
 
   // Admin notification
   try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    await sendMail({
       to: ADMIN_EMAIL,
       subject: `Uj berlet vasarlas - ${customerName} - ${passType.name}`,
       html: `
         <h3>Uj berlet vasarlas</h3>
-        <p><strong>Vendeg:</strong> ${customerName} (${customerEmail})</p>
-        <p><strong>Berlet:</strong> ${passType.name} (${passType.occasions} alkalom)</p>
+        <p><strong>Vendeg:</strong> ${escapeHtml(customerName)} (${escapeHtml(customerEmail)})</p>
+        <p><strong>Berlet:</strong> ${escapeHtml(passType.name)} (${passType.occasions} alkalom)</p>
         <p><strong>Ervenyes:</strong> ${expiresAt.toLocaleDateString("hu-HU")}-ig</p>
         <p><strong>Osszeg:</strong> ${passType.priceHuf.toLocaleString("hu-HU")} Ft</p>
       `,
