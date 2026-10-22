@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, FileText } from "lucide-react";
 
 interface InstructorProfile {
   name: string;
@@ -11,6 +11,99 @@ interface InstructorProfile {
   bio: string | null;
   avatar_url: string | null;
   is_active: boolean;
+}
+
+interface LegalField {
+  key: string;
+  label: string;
+}
+
+function LegalSettingsForm() {
+  const [fields, setFields] = useState<LegalField[]>([]);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setFields(data.fields);
+          setValues(data.values);
+        }
+      });
+  }, []);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    const res = await fetch("/api/admin/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const data = await res.json();
+      setValues(data.values);
+      setMessage("Elmentve. Az impresszum és az adatkezelési oldal azonnal frissül.");
+    } else {
+      const data = await res.json().catch(() => null);
+      setMessage(data?.error ?? "A mentés nem sikerült.");
+    }
+  }
+
+  return (
+    <section className="bg-card border border-border rounded-lg p-6">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <FileText size={20} className="text-primary" />
+        </div>
+        <div>
+          <h2 className="font-serif text-lg font-semibold text-foreground">
+            Jogi adatok
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Impresszum és adatkezelési tájékoztató. Amit üresen hagysz, az az
+            oldalon &quot;megadandó&quot; jelzéssel látszik.
+          </p>
+        </div>
+      </div>
+      <form onSubmit={save} className="space-y-4 mt-6">
+        {fields.map((f) => (
+          <div key={f.key}>
+            <label
+              htmlFor={`legal-${f.key}`}
+              className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1"
+            >
+              {f.label}
+            </label>
+            <input
+              id={`legal-${f.key}`}
+              name={f.key}
+              value={values[f.key] ?? ""}
+              onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            />
+          </div>
+        ))}
+        <button
+          type="submit"
+          disabled={saving}
+          className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+        >
+          {saving ? "Mentés..." : "Mentés"}
+        </button>
+        {message && (
+          <p role="status" className="text-sm text-foreground">
+            {message}
+          </p>
+        )}
+      </form>
+    </section>
+  );
 }
 
 export default function AdminSettingsPage() {
@@ -121,6 +214,8 @@ export default function AdminSettingsPage() {
           )}
         </div>
       </section>
+
+      <LegalSettingsForm />
 
       <section className="bg-card border border-border rounded-lg p-6">
         <h2 className="font-serif text-lg font-semibold text-foreground mb-2">

@@ -3,6 +3,8 @@ import { Inter, Playfair_Display, Space_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 import CustomCursor from "@/components/CustomCursor";
+import CookieConsent from "@/components/legal/CookieConsent";
+import { GA_ID, INDEXING_ENABLED, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,6 +29,20 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
+  robots: INDEXING_ENABLED
+    ? { index: true, follow: true }
+    : { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    locale: "hu_HU",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "Nagomi | Pilates Studio Debrecen",
+    description:
+      "Premium reformer pilates studio Debrecenben. Egyéni figyelem, kis csoportos órák, professzionális oktatók.",
+  },
   title: "Nagomi | Pilates Studio Debrecen",
   description:
     "Premium reformer pilates studio Debrecenben. Egyéni figyelem, kis csoportos órák, professzionális oktatók.",
@@ -55,6 +71,7 @@ export default function RootLayout({
           {children}
         </SmoothScroll>
         <CustomCursor />
+        {GA_ID && <CookieConsent gaId={GA_ID} />}
       </body>
     </html>
   );

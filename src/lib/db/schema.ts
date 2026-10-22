@@ -1,5 +1,6 @@
 import {
   pgTable,
+  serial,
   uuid,
   text,
   integer,
@@ -87,6 +88,9 @@ export const customerPasses = pgTable(
   (table) => [
     index("idx_customer_passes_email").on(table.customerEmail),
     index("idx_customer_passes_active").on(table.isActive, table.expiresAt),
+    uniqueIndex("customer_passes_unique_session").on(
+      table.stripeCheckoutSessionId
+    ),
   ]
 );
 
@@ -124,5 +128,50 @@ export const bookings = pgTable(
       table.classDate,
       table.customerEmail
     ),
+  ]
+);
+
+/** Admin által szerkeszthető beállítások (jogi adatok: impresszum, adatkezelés). */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull().default(""),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+/**
+ * Kiállított számlák naplója. A checkout_session_id egyedi: egy fizetett
+ * eseményhez (újrapróbált webhookra is) pontosan egy számla tartozik.
+ */
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    seq: serial("seq").notNull(),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id").notNull(),
+    kind: text("kind").notNull(), // class_booking | pass_purchase
+    bookingId: uuid("booking_id").references(() => bookings.id, {
+      onDelete: "set null",
+    }),
+    customerPassId: uuid("customer_pass_id").references(
+      () => customerPasses.id,
+      { onDelete: "set null" }
+    ),
+    customerName: text("customer_name").notNull(),
+    customerEmail: text("customer_email").notNull(),
+    description: text("description").notNull(),
+    amountHuf: integer("amount_huf").notNull(),
+    provider: text("provider").notNull(), // mock | szamlazz
+    status: text("status").notNull().default("issued"), // pending | issued | failed | stornoed
+    invoiceNumber: text("invoice_number"),
+    providerRef: text("provider_ref"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("invoices_unique_session_kind").on(
+      table.stripeCheckoutSessionId,
+      table.kind
+    ),
+    index("idx_invoices_status").on(table.status),
   ]
 );
